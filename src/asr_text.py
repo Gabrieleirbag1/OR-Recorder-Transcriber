@@ -1,5 +1,4 @@
 import whisper
-import os
 from utils import OUTPUT_DIR
 
 from nol_event_classifier.supervised.supervised_clustering import match_events_to_labels, RAW_LABELS
@@ -20,6 +19,7 @@ def transcribe_audio(file_path, model_name="base"):
     return result["text"]
 
 if __name__ == "__main__":
+    import os
     audio_file = os.path.join(OUTPUT_DIR, "output.wav")
     if os.path.exists(audio_file):
         result = process_audio_to_label(audio_file, "base")

@@ -4,6 +4,8 @@ import queue
 import threading
 from pynput import keyboard
 
+from utils import OUTPUT_DIR
+
 def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
     """Enregistre tant que la touche est maintenue (simule une pédale)."""
     q = queue.Queue()
@@ -48,3 +50,12 @@ def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
 
     audio = np.concatenate(frames, axis=0).flatten()
     return audio, samplerate
+
+if __name__ == "__main__":
+    import soundfile as sf
+    import os
+    audio, sr = record_until_key_release()
+    print(f"Recording ended. Duration: {len(audio) / sr:.2f} seconds.")
+    # save the file 
+    sf.write(os.path.join(OUTPUT_DIR, "output.wav"), audio, sr)
+    print("File 'output.wav' saved.")
