@@ -3,7 +3,7 @@ import numpy as np
 import queue
 import threading
 from pynput import keyboard
-
+from lite_logging.lite_logging import log
 from utils import OUTPUT_DIR
 
 def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
@@ -26,7 +26,7 @@ def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
             key_released_after_press.set()
             return False  # stoppe le listener
 
-    print(f"Hold '{trigger_key}' to speak...")
+    log(f"Hold '{trigger_key}' to speak...")
 
     listener = keyboard.Listener(on_press=on_press, on_release=on_release)
     listener.start()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     import soundfile as sf
     import os
     audio, sr = record_until_key_release()
-    print(f"Recording ended. Duration: {len(audio) / sr:.2f} seconds.")
+    log(f"Recording ended. Duration: {len(audio) / sr:.2f} seconds.")
     # save the file 
     sf.write(os.path.join(OUTPUT_DIR, "output.wav"), audio, sr)
-    print("File 'output.wav' saved.")
+    log("File 'output.wav' saved.")
