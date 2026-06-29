@@ -65,8 +65,7 @@ class AudioProcessor:
         return self.best_event
 
 if __name__ == "__main__":
-    import os
-    audio_file = os.path.join(OUTPUT_DIR, "output copy 2.wav")
+    audio_file = os.path.join(OUTPUT_DIR, "output.wav")
     if os.path.exists(audio_file):
         audio_processor = AudioProcessor(file_path=audio_file)
         result = audio_processor.evaluate_audio_event()
