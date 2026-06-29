@@ -2,10 +2,13 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVB
 from PyQt6.QtCore import Qt
 import sys
 
+from recorder import RecordThread
+
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("My Application")
+        self.record_thread = None
         self.setup_ui()
 
     def nothing(self):
@@ -31,7 +34,6 @@ class Window(QMainWindow):
         self.main_layout.addWidget(self.label_selection_widget)
 
         self.setCentralWidget(main_widget)
-
         self.show_ui("recorder")
 
     def show_ui(self, mode):
@@ -42,16 +44,20 @@ class Window(QMainWindow):
             self.recorder_widget.hide()
             self.label_selection_widget.show()
         else:
-            raise ValueError(f"Unknown mode : {mode!r}")
+            raise ValueError(f"Mode inconnu : {mode!r} (attendu : 'recorder' ou 'label_selection')")
 
     def setup_recorder_ui(self):
         self.recorder_widget = QWidget()
         layout = QVBoxLayout()
         self.recorder_widget.setLayout(layout)
 
-        record_button = QPushButton("Record")
-        record_button.clicked.connect(self.on_record_clicked)
-        layout.addWidget(record_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.record_button = QPushButton("Hold to Record")
+        self.record_button.pressed.connect(self.on_record_pressed)
+        self.record_button.released.connect(self.on_record_released)
+        layout.addWidget(self.record_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.status_label = QLabel("")
+        layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def setup_label_selection_ui(self):
         self.label_selection_widget = QWidget()
@@ -62,17 +68,38 @@ class Window(QMainWindow):
         layout.addWidget(select_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         buttons_layout = QHBoxLayout()
-        label_buttons = []
+        self.label_buttons = []
         for i in range(3):
             button = QPushButton(f"Label {i+1}")
             button.clicked.connect(self.nothing)
-            label_buttons.append(button)
+            self.label_buttons.append(button)
             buttons_layout.addWidget(button)
 
         layout.addLayout(buttons_layout)
 
-    def on_record_clicked(self):
+    def on_record_pressed(self):
+        self.status_label.setText("Recording...")
+        self.record_thread = RecordThread(samplerate=16000, filename="output.wav")
+        self.record_thread.finished_recording.connect(self.on_recording_finished)
+        self.record_thread.recording_failed.connect(self.on_recording_failed)
+        self.record_thread.start()
+
+    def on_record_released(self):
+        self.status_label.setText("Processing...")
+        if self.record_thread is not None:
+            self.record_thread.stop()
+
+    def on_recording_finished(self, file_path):
+        self.status_label.setText(f"Saved : {file_path}")
+
+        # result = process_audio_to_label(file_path)
+        # for button, candidate in zip(self.label_buttons, result["top_k"]):
+        #     button.setText(candidate["label"])
+
         self.show_ui("label_selection")
+
+    def on_recording_failed(self, error_message):
+        self.status_label.setText(f"Recording failed : {error_message}")
 
 
 if __name__ == "__main__":

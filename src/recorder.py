@@ -6,6 +6,70 @@ from pynput import keyboard
 from lite_logging.lite_logging import log
 from utils import OUTPUT_DIR
 
+import os
+import queue
+import threading
+import numpy as np
+import sounddevice as sd
+import soundfile as sf
+from PyQt6.QtCore import QThread, pyqtSignal
+
+class RecordThread(QThread):
+    finished_recording = pyqtSignal(str)
+    recording_failed = pyqtSignal(str)
+
+    def __init__(self, samplerate=16000, filename="output.wav", parent=None):
+        super().__init__(parent)
+        self.samplerate = samplerate
+        self.filename = filename
+        self._stop_event = threading.Event()
+
+    def run(self):
+        self._stop_event.clear()
+
+        q = queue.Queue()
+
+        def callback(indata, frames, time, status):
+            if status:
+                log(f"Sounddevice status: {status}")
+            q.put(indata.copy())
+
+        log("Recording started...")
+
+        frames = []
+        try:
+            with sd.InputStream(samplerate=self.samplerate, channels=1, dtype="float32", callback=callback):
+                while not self._stop_event.is_set():
+                    try:
+                        frames.append(q.get(timeout=0.1))
+                    except queue.Empty:
+                        continue
+                while not q.empty():
+                    frames.append(q.get())
+        except Exception as e:
+            log(f"Recording error: {e}", level="ERROR")
+            self.recording_failed.emit(str(e))
+            return
+
+        if not frames:
+            log("No audio captured.", level="ERROR")
+            self.recording_failed.emit("No audio captured.")
+            return
+
+        audio = np.concatenate(frames, axis=0).flatten()
+        duration = len(audio) / self.samplerate
+        log(f"Recording ended. Duration: {duration:.2f} seconds.")
+
+        output_path = os.path.join(OUTPUT_DIR, self.filename)
+        sf.write(output_path, audio, self.samplerate)
+        log(f"File '{output_path}' saved.", level="DEBUG")
+
+        self.finished_recording.emit(output_path)
+
+    def stop(self):
+        if self._stop_event is not None:
+            self._stop_event.set()
+
 def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
     """Enregistre tant que la touche est maintenue (simule une pédale)."""
     q = queue.Queue()
@@ -52,10 +116,8 @@ def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
     return audio, samplerate
 
 if __name__ == "__main__":
-    import soundfile as sf
-    import os
     audio, sr = record_until_key_release()
     log(f"Recording ended. Duration: {len(audio) / sr:.2f} seconds.")
     # save the file 
     sf.write(os.path.join(OUTPUT_DIR, "output.wav"), audio, sr)
-    log("File 'output.wav' saved.")
+    log("File 'output.wav' saved.", level="DEBUG")
