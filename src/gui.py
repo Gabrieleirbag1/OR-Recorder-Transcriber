@@ -20,12 +20,25 @@ class Window(QMainWindow):
 
     def setup_ui(self):
         self.setup_size()
-        main_layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
         main_widget = QWidget()
-        main_widget.setLayout(main_layout)
+        main_widget.setLayout(self.main_layout)
 
+        self.setup_recorder_ui()
+        self.setup_label_selection_ui()
+        
+        self.setCentralWidget(main_widget)
+
+    def setup_recorder_ui(self):
+        self.setup_size()
+        record_button = QPushButton("Record")
+        record_button.clicked.connect(self.nothing)
+        self.main_layout.addWidget(record_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def setup_label_selection_ui(self):
+        self.setup_size()
         select_label = QLabel("Select the most appropriate label:")
-        main_layout.addWidget(select_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.main_layout.addWidget(select_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         buttons_layout = QHBoxLayout()
         label_buttons = []
@@ -35,8 +48,7 @@ class Window(QMainWindow):
             label_buttons.append(button)
             buttons_layout.addWidget(button)
 
-        main_layout.addLayout(buttons_layout)
-        self.setCentralWidget(main_widget)
+        self.main_layout.addLayout(buttons_layout)
         
 if __name__ == "__main__":
     app = QApplication(sys.argv)
