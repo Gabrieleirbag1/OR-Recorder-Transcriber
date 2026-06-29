@@ -9,22 +9,26 @@ with open(os.path.join(os.path.dirname(__file__), "medical_context.json"), "r", 
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
 class AudioProcessor:
-    def __init__(self, file_path, model_name_asr="base", model_name_embedding="paraphrase-multilingual-mpnet-base-v2", gui=False):
-        self.file_path = file_path
+    def __init__(self, model_name_asr="base", model_name_embedding="paraphrase-multilingual-mpnet-base-v2", gui=False):
         self.model_name_asr = model_name_asr
         self.model_name_embedding = model_name_embedding
         self.gui = gui
+        self.asr_model = None
         self.best_event: dict = {}
         self.events: list[dict] = [{}]
 
-    @staticmethod
-    def transcribe_audio(file_path, model_name="base"):
-        model = whisper.load_model(model_name)
-        result = model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
+    def load_model(self):
+        self.asr_model = whisper.load_model(self.model_name_asr)
+        log(f"ASR model '{self.model_name_asr}' loaded.")
+
+    def transcribe_audio(self, file_path) -> str:
+        if self.asr_model is None:
+            self.load_model()
+        result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
         return result["text"]
     
-    def process_audio_to_label(self) -> dict | None:
-        text = self.transcribe_audio(self.file_path, self.model_name_asr)
+    def process_audio_to_label(self, file_path) -> dict | None:
+        text = self.transcribe_audio(file_path)
         log(f"Transcribed : '{text}'")
 
         if not text:
@@ -55,8 +59,8 @@ class AudioProcessor:
                     log("No label selected by user.")
         return result["top_k"][0]
 
-    def evaluate_audio_event(self):
-        result = self.process_audio_to_label()
+    def evaluate_audio_event(self, file_path):
+        result = self.process_audio_to_label(file_path)
         if result is None:
             log("Unable to classify audio. Please try again.")
             return None
@@ -67,8 +71,8 @@ class AudioProcessor:
 if __name__ == "__main__":
     audio_file = os.path.join(OUTPUT_DIR, "output.wav")
     if os.path.exists(audio_file):
-        audio_processor = AudioProcessor(file_path=audio_file)
-        result = audio_processor.evaluate_audio_event()
+        audio_processor = AudioProcessor()
+        result = audio_processor.evaluate_audio_event(audio_file)
         log(f"Best event: {result['label']} (score: {result['score']:.2f})")
     else:
         log(f"Audio file '{audio_file}' not found. Please record audio first.", level="ERROR")
