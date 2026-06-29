@@ -2,7 +2,7 @@ import soundfile as sf
 import os
 from lite_logging.lite_logging import log
 from recorder import record_until_key_release
-from asr_text import process_audio_to_label
+from asr_text import process_audio_to_label, handle_label_selection
 from utils import OUTPUT_DIR
 
 def main():
@@ -16,5 +16,7 @@ def main():
     result = process_audio_to_label(output_file_path)
     log(f"Classification results: {result}")
 
+    best_label = handle_label_selection(result)
+    log(f"Final selected label: {best_label}")
 if __name__ == "__main__":
     main()
