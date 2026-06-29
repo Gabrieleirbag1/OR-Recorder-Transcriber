@@ -5,7 +5,7 @@ from recorder import record_until_key_release
 from asr_text import process_audio_to_label, handle_label_selection
 from utils import OUTPUT_DIR
 
-def main():
+def cli():
     audio, sr = record_until_key_release()
     log(f"Recording ended. Duration: {len(audio) / sr:.2f} seconds.")
 
@@ -18,5 +18,9 @@ def main():
 
     best_label = handle_label_selection(result)
     log(f"Final selected label: {best_label}")
+
+def main():
+    cli()
+    
 if __name__ == "__main__":
     main()
