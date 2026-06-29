@@ -1,18 +1,25 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
 from PyQt6.QtCore import Qt
-import sys
-
+from lite_logging.lite_logging import log
+from utils import THRESHOLD
 from recorder import RecordThread
+from asr_text import AudioProcessor
+import sys
 
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("My Application")
         self.record_thread = None
+        self.best_label = None
+
+        self.setWindowTitle("My Application")
         self.setup_ui()
 
-    def nothing(self):
-        pass
+    def on_label_selected(self, button):
+        self.best_label = button.text()
+        self.status_label.setText(f"Selected label: {self.best_label}")
+        self.show_ui("recorder")
+        log(f"User selected label: {self.best_label}", level="DEBUG")
 
     def setup_size(self):
         screen = QApplication.primaryScreen()
@@ -67,15 +74,15 @@ class Window(QMainWindow):
         select_label = QLabel("Select the most appropriate label:")
         layout.addWidget(select_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        buttons_layout = QHBoxLayout()
+        self.buttons_layout = QHBoxLayout()
         self.label_buttons = []
         for i in range(3):
             button = QPushButton(f"Label {i+1}")
-            button.clicked.connect(self.nothing)
+            button.clicked.connect(lambda _, btn=button: self.on_label_selected(btn))
             self.label_buttons.append(button)
-            buttons_layout.addWidget(button)
+            self.buttons_layout.addWidget(button)
 
-        layout.addLayout(buttons_layout)
+        layout.addLayout(self.buttons_layout)
 
     def on_record_pressed(self):
         self.status_label.setText("Recording...")
@@ -91,16 +98,26 @@ class Window(QMainWindow):
 
     def on_recording_finished(self, file_path):
         self.status_label.setText(f"Saved : {file_path}")
+        
+        file_path = "/home/frigiel/Documents/VSCODE/Stage LIAM 2026/OR-Recorder-Transcriber/output/output copy.wav"
 
-        # result = process_audio_to_label(file_path)
-        # for button, candidate in zip(self.label_buttons, result["top_k"]):
-        #     button.setText(candidate["label"])
+        audio_processor = AudioProcessor(file_path=file_path, gui=True)
+        result = audio_processor.evaluate_audio_event()
+        if result is None:
+            self.status_label.setText(f"Unable to classify audio. Please try again.")
+            return
+        
+        if float(result["score"]) >= THRESHOLD:
+            self.status_label.setText(f"Best label: {result['label']} (score: {result['score']:.2f})")
+            return
+        
+        for button, event in zip(self.label_buttons, audio_processor.events):
+            button.setText(event["label"])
 
         self.show_ui("label_selection")
 
     def on_recording_failed(self, error_message):
         self.status_label.setText(f"Recording failed : {error_message}")
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
