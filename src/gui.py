@@ -1,10 +1,14 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon, QPixmap
 from lite_logging.lite_logging import log
 from utils import THRESHOLD
 from recorder import RecordThread
 from asr_text import AudioProcessor
+import os
 import sys
+
+ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
 
 class Window(QMainWindow):
     def __init__(self):
@@ -13,8 +17,7 @@ class Window(QMainWindow):
         self.best_label = None
 
         self.setWindowTitle("My Application")
-        self.load_audio_processor()
-        self.setup_ui()
+        self.setup()
 
     def setup(self):
         self.load_audio_processor()
@@ -61,7 +64,12 @@ class Window(QMainWindow):
         layout = QVBoxLayout()
         self.recorder_widget.setLayout(layout)
 
-        self.record_button = QPushButton("Hold to Record")
+        self.micro_image_pixmap = QPixmap(os.path.join(ASSETS_PATH, "mic_dark.svg"))
+        self.record_button = QPushButton()
+        self.record_button.setFixedSize(120, 120)
+        self.micro_image_pixmap = self.micro_image_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.record_button.setIcon(QIcon(self.micro_image_pixmap))
+        self.record_button.setIconSize(self.micro_image_pixmap.size())
         self.record_button.pressed.connect(self.on_record_pressed)
         self.record_button.released.connect(self.on_record_released)
         layout.addWidget(self.record_button, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -95,6 +103,7 @@ class Window(QMainWindow):
 
     def on_record_pressed(self):
         self.status_label.setText("Recording...")
+        self.record_button.setStyleSheet("background-color: red")
         self.record_thread = RecordThread(samplerate=16000, filename="output.wav")
         self.record_thread.finished_recording.connect(self.on_recording_finished)
         self.record_thread.recording_failed.connect(self.on_recording_failed)
@@ -102,6 +111,7 @@ class Window(QMainWindow):
 
     def on_record_released(self):
         self.status_label.setText("Processing...")
+        self.record_button.setStyleSheet("")
         if self.record_thread is not None:
             self.record_thread.stop()
 
