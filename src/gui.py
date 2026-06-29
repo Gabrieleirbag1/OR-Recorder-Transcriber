@@ -13,13 +13,17 @@ class Window(QMainWindow):
         self.best_label = None
 
         self.setWindowTitle("My Application")
+        self.load_audio_processor()
         self.setup_ui()
 
-    def on_label_selected(self, button):
-        self.best_label = button.text()
-        self.status_label.setText(f"Selected label: {self.best_label}")
-        self.show_ui("recorder")
-        log(f"User selected label: {self.best_label}", level="DEBUG")
+    def setup(self):
+        self.load_audio_processor()
+        self.setup_size()
+        self.setup_ui()
+
+    def load_audio_processor(self):
+        self.audio_processor = AudioProcessor(gui=True)
+        self.audio_processor.load_model()
 
     def setup_size(self):
         screen = QApplication.primaryScreen()
@@ -29,7 +33,6 @@ class Window(QMainWindow):
         self.setGeometry(100, 100, width, height)
 
     def setup_ui(self):
-        self.setup_size()
         self.main_layout = QVBoxLayout()
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
@@ -84,6 +87,12 @@ class Window(QMainWindow):
 
         layout.addLayout(self.buttons_layout)
 
+    def on_label_selected(self, button):
+        self.best_label = button.text()
+        self.status_label.setText(f"Selected label: {self.best_label}")
+        self.show_ui("recorder")
+        log(f"User selected label: {self.best_label}", level="DEBUG")
+
     def on_record_pressed(self):
         self.status_label.setText("Recording...")
         self.record_thread = RecordThread(samplerate=16000, filename="output.wav")
@@ -101,8 +110,7 @@ class Window(QMainWindow):
         
         file_path = "/home/frigiel/Documents/VSCODE/Stage LIAM 2026/OR-Recorder-Transcriber/output/output copy.wav"
 
-        audio_processor = AudioProcessor(file_path=file_path, gui=True)
-        result = audio_processor.evaluate_audio_event()
+        result = self.audio_processor.evaluate_audio_event(file_path)
         if result is None:
             self.status_label.setText(f"Unable to classify audio. Please try again.")
             return
@@ -111,7 +119,7 @@ class Window(QMainWindow):
             self.status_label.setText(f"Best label: {result['label']} (score: {result['score']:.2f})")
             return
         
-        for button, event in zip(self.label_buttons, audio_processor.events):
+        for button, event in zip(self.label_buttons, self.audio_processor.events):
             button.setText(event["label"])
 
         self.show_ui("label_selection")
