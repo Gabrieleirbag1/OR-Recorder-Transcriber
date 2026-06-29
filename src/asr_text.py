@@ -8,56 +8,68 @@ from nol_event_classifier.supervised.supervised_clustering import match_events_t
 with open(os.path.join(os.path.dirname(__file__), "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
-def process_audio_to_label(file_path, model_name_asr="base", model_name_embedding="paraphrase-multilingual-mpnet-base-v2"):
-    text = transcribe_audio(file_path, model_name_asr)
-    log(f"Transcribed : '{text}'")
+class AudioProcessor:
+    def __init__(self, file_path, model_name_asr="base", model_name_embedding="paraphrase-multilingual-mpnet-base-v2", gui=False):
+        self.file_path = file_path
+        self.model_name_asr = model_name_asr
+        self.model_name_embedding = model_name_embedding
+        self.gui = gui
+        self.best_event: dict = {}
+        self.events: list[dict] = [{}]
 
-    if not text:
-        return None
+    @staticmethod
+    def transcribe_audio(file_path, model_name="base"):
+        model = whisper.load_model(model_name)
+        result = model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
+        return result["text"]
+    
+    def process_audio_to_label(self) -> dict | None:
+        text = self.transcribe_audio(self.file_path, self.model_name_asr)
+        log(f"Transcribed : '{text}'")
 
-    results, _ = match_events_to_labels([text], RAW_LABELS, model_name_embedding, top_k=3)
-    log("Classification results: " + str(results[0]))
-    return results[0]
+        if not text:
+            return None
 
-def transcribe_audio(file_path, model_name="base"):
-    model = whisper.load_model(model_name)
-    result = model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
-    return result["text"]
+        results, _ = match_events_to_labels([text], RAW_LABELS, self.model_name_embedding, top_k=3)
+        self.events = results[0]["top_k"]
+        log("Classification results: " + str(results[0]))
+        return results[0]
 
-def handle_label_selection(result):
-    best_score = float(result["best_score"])
-    if best_score:
-        print("Please select the most appropriate label from the following options:")
-        for (i, event) in enumerate(result["top_k"]):
-            print(f"[{i+1}] Label: {event['label']}, Score: {event['score']}")
-        else:
-            input_str = input("Enter the number of the selected label (or press Enter to skip): ")
-            if input_str.strip().isdigit():
-                selected_index = int(input_str.strip()) - 1
-                if 0 <= selected_index < len(result["top_k"]):
-                    selected_label = result["top_k"][selected_index]
-                    log(f"User selected label: {selected_label}")
-                    return selected_label
-                else:
-                    log("Invalid selection. No label selected.")
+    def handle_label_selection(self, result):
+        best_score = float(result["best_score"])
+        if best_score >= THRESHOLD and not self.gui:
+            print("Please select the most appropriate label from the following options:")
+            for (i, event) in enumerate(result["top_k"]):
+                print(f"[{i+1}] Label: {event['label']}, Score: {event['score']}")
             else:
-                log("No label selected by user.")
-    return result["top_k"][0]
+                input_str = input("Enter the number of the selected label (or press Enter to skip): ")
+                if input_str.strip().isdigit():
+                    selected_index = int(input_str.strip()) - 1
+                    if 0 <= selected_index < len(result["top_k"]):
+                        selected_label = result["top_k"][selected_index]
+                        log(f"User selected label: {selected_label}")
+                        return selected_label
+                    else:
+                        log("Invalid selection. No label selected.")
+                else:
+                    log("No label selected by user.")
+        return result["top_k"][0]
 
-def evaluate_audio_label(file_path, model_name_asr="base", model_name_embedding="paraphrase-multilingual-mpnet-base-v2"):
-    result = process_audio_to_label(file_path, model_name_asr, model_name_embedding)
-    if result is None:
-        log("Unable to classify audio. Please try again.")
-        return None
+    def evaluate_audio_event(self):
+        result = self.process_audio_to_label()
+        if result is None:
+            log("Unable to classify audio. Please try again.")
+            return None
 
-    best_label = handle_label_selection(result)
-    return best_label
+        self.best_event = self.handle_label_selection(result)
+        return self.best_event
 
 if __name__ == "__main__":
     import os
-    audio_file = os.path.join(OUTPUT_DIR, "output.wav")
+    audio_file = os.path.join(OUTPUT_DIR, "output copy 2.wav")
     if os.path.exists(audio_file):
-        result = evaluate_audio_label(audio_file, "tiny")
-        log(f"Best label: {result['label']} (score: {result['score']:.2f})")
+        audio_processor = AudioProcessor(file_path=audio_file)
+        result = audio_processor.evaluate_audio_event()
+        log(f"Best event: {result['label']} (score: {result['score']:.2f})")
     else:
         log(f"Audio file '{audio_file}' not found. Please record audio first.", level="ERROR")
