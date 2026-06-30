@@ -3,27 +3,33 @@ import os
 import whisper
 from lite_logging.lite_logging import log
 from utils import OUTPUT_DIR, THRESHOLD
-from nol_event_classifier.supervised.supervised_clustering import match_events_to_labels, RAW_LABELS
+from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
 
 with open(os.path.join(os.path.dirname(__file__), "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
 class AudioProcessor:
     def __init__(self, model_name_asr="base", model_name_embedding="paraphrase-multilingual-mpnet-base-v2", gui=False):
-        self.model_name_asr = model_name_asr
-        self.model_name_embedding = model_name_embedding
+        self.asr_model_name = model_name_asr
+        self.embedding_model_name = model_name_embedding
         self.gui = gui
         self.asr_model = None
+        self.supervised_clustering = None
         self.best_event: dict = {}
         self.events: list[dict] = [{}]
 
-    def load_model(self):
-        self.asr_model = whisper.load_model(self.model_name_asr)
-        log(f"ASR model '{self.model_name_asr}' loaded.")
+    def load_asr_model(self):
+        self.asr_model = whisper.load_model(self.asr_model_name)
+        log(f"ASR model '{self.asr_model_name}' loaded.")
+
+    def load_embedding_model(self):
+        self.supervised_clustering = SupervisedClustering([self.embedding_model_name])
+        self.supervised_clustering.load_models()
+        log(f"Embedding model '{self.embedding_model_name}' loaded.")
 
     def transcribe_audio(self, file_path) -> str:
         if self.asr_model is None:
-            self.load_model()
+            self.load_asr_model()
         result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
         return result["text"]
     
@@ -34,7 +40,7 @@ class AudioProcessor:
         if not text:
             return None
 
-        results, _ = match_events_to_labels([text], RAW_LABELS, self.model_name_embedding, top_k=3)
+        results, _ = self.supervised_clustering.match_events_to_labels([text], RAW_LABELS, self.embedding_model_name, top_k=3)
         self.events = results[0]["top_k"]
         log("Classification results: " + str(results[0]))
         return results[0]

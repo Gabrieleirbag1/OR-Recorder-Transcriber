@@ -26,7 +26,8 @@ class Window(QMainWindow):
 
     def load_audio_processor(self):
         self.audio_processor = AudioProcessor(gui=True)
-        self.audio_processor.load_model()
+        self.audio_processor.load_asr_model()
+        self.audio_processor.load_embedding_model()
 
     def setup_size(self):
         screen = QApplication.primaryScreen()
