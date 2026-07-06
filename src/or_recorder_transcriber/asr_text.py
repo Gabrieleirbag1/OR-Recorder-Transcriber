@@ -3,11 +3,11 @@ import os
 import re
 import whisper
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import AUDIO_DIR, THRESHOLD
+from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR, THRESHOLD
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
 from or_recorder_transcriber.event_logger import EventLoggerCSV
 
-with open(os.path.join(os.path.dirname(__file__), "medical_context.json"), "r", encoding="utf-8") as f:
+with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
 class AudioProcessor:

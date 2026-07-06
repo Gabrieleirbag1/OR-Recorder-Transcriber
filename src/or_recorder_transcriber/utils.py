@@ -2,7 +2,8 @@ import os
 
 THRESHOLD = 0.75
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
+ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "output")
 AUDIO_DIR = os.path.join(OUTPUT_DIR, "audio")
 DATA_DIR = os.path.join(OUTPUT_DIR, "data")
 

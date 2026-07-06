@@ -34,7 +34,7 @@ def gui():
 
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune a SetFit model on a training dataset")
-    parser.add_argument("--cli", "-c", type=str, default=None, help="Output name for the fine-tuned model")
+    parser.add_argument('--cli', "-c", action='store_true', help='Run in command-line interface mode')
     args = parser.parse_args()
     if args.cli:
         cli()

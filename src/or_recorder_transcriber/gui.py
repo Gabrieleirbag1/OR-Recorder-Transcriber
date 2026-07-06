@@ -2,16 +2,16 @@ from PyQt6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPush
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import THRESHOLD
+from or_recorder_transcriber.utils import ASSETS_PATH, THRESHOLD
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor
 import os
 import sys
 import json
 
-ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
-with open(os.path.join(os.path.dirname(__file__), "labels.json"), "r", encoding="utf-8") as f:
+with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
     RAW_LABELS = json.load(f)
+
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -68,7 +68,7 @@ class Window(QMainWindow):
         self.recorder_layout = QVBoxLayout()
         self.recorder_widget.setLayout(self.recorder_layout)
 
-        self.micro_image_pixmap = QPixmap(os.path.join(ASSETS_PATH, "mic_dark.svg"))
+        self.micro_image_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", "mic_dark.svg"))
         self.record_button = QPushButton()
         self.record_button.setFixedSize(120, 120)
         self.micro_image_pixmap = self.micro_image_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
