@@ -27,12 +27,12 @@ class AudioProcessor:
 
     def load_asr_model(self):
         self.asr_model = whisper.load_model(self.asr_model_name)
-        log(f"ASR model '{self.asr_model_name}' loaded.")
+        log(f"ASR model '{self.asr_model_name}' loaded.", level="DEBUG")
 
     def load_embedding_model(self):
         self.supervised_clustering = SupervisedClustering([self.embedding_model_name])
         self.supervised_clustering.load_models()
-        log(f"Embedding model '{self.embedding_model_name}' loaded.")
+        log(f"Embedding model '{self.embedding_model_name}' loaded.", level="DEBUG")
 
     def transcribe_audio(self, file_path) -> str:
         if self.asr_model is None:
@@ -50,7 +50,7 @@ class AudioProcessor:
 
         results, _ = self.supervised_clustering.match_events_to_labels([text], RAW_LABELS, self.embedding_model_name, top_k=3)
         self.events = results[0]["top_k"]
-        log("Classification results: " + str(results[0]))
+        log("Classification results: " + str(results[0]), level="DEBUG")
         return results[0]
     
     def log_classification_results(self, result, corrected_label=None):
@@ -80,20 +80,20 @@ class AudioProcessor:
                     selected_index = int(input_str.strip()) - 1
                     if 0 <= selected_index < len(result["top_k"]):
                         selected_label = result["top_k"][selected_index]
-                        log(f"User selected label: {selected_label}")
+                        log(f"User selected label: {selected_label}", level="DEBUG")
                         self.log_classification_results(result, corrected_label=selected_label["label"])
                         return selected_label
                     else:
-                        log("Invalid selection. No label selected.")
+                        log("Invalid selection. No label selected.", level="WARNING")
                 else:
-                    log("No label selected by user.")
+                    log("No label selected by user.", level="WARNING")
         self.log_classification_results(result)
         return result["top_k"][0]
 
     def evaluate_audio_event(self, file_path):
         result = self.process_audio_to_label(file_path)
         if result is None:
-            log("Unable to classify audio. Please try again.")
+            log("Unable to classify audio. Please try again.", level="ERROR")
             return None
 
         self.best_event = self.handle_label_selection(result)

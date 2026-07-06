@@ -90,7 +90,7 @@ def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
             key_released_after_press.set()
             return False  # stoppe le listener
 
-    log(f"Hold '{trigger_key}' to speak...")
+    log(f"=========== Hold '{trigger_key}' to speak... ===========")
 
     listener = keyboard.Listener(on_press=on_press, on_release=on_release)
     listener.start()
