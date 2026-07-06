@@ -4,6 +4,7 @@ import whisper
 from lite_logging.lite_logging import log
 from utils import AUDIO_DIR, THRESHOLD
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
+from event_logger import EventLoggerCSV
 
 with open(os.path.join(os.path.dirname(__file__), "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
@@ -15,6 +16,7 @@ class AudioProcessor:
         self.gui = gui
         self.asr_model = None
         self.supervised_clustering = None
+        self.event_logger = None
         self.best_event: dict = {}
         self.events: list[dict] = [{}]
 
@@ -35,6 +37,7 @@ class AudioProcessor:
     
     def process_audio_to_label(self, file_path) -> dict | None:
         text = self.transcribe_audio(file_path)
+        text = "chaussettes de ouf"
         log(f"Transcribed : '{text}'")
 
         if not text:
