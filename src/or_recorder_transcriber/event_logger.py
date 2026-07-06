@@ -5,7 +5,7 @@
 import csv
 import os
 import datetime
-from utils import DATA_DIR
+from or_recorder_transcriber.utils import DATA_DIR
 
 class EventLoggerCSV:
     def __init__(self, output_dir=DATA_DIR):

@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPush
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from lite_logging.lite_logging import log
-from utils import THRESHOLD
-from recorder import RecordThread
-from asr_text import AudioProcessor
+from or_recorder_transcriber.utils import THRESHOLD
+from or_recorder_transcriber.recorder import RecordThread
+from or_recorder_transcriber.asr_text import AudioProcessor
 import os
 import sys
 import json

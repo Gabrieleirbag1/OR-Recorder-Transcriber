@@ -4,7 +4,7 @@ import queue
 import threading
 from pynput import keyboard
 from lite_logging.lite_logging import log
-from utils import AUDIO_DIR
+from or_recorder_transcriber.utils import AUDIO_DIR
 
 import os
 import queue

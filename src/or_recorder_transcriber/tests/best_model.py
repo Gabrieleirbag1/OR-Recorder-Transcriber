@@ -1,4 +1,4 @@
-from ..utils import OUTPUT_DIR
+from or_recorder_transcriber.utils import OUTPUT_DIR
 from lite_logging.lite_logging import log
 import whisper
 import os

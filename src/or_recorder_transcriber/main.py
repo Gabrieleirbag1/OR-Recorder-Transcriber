@@ -2,9 +2,9 @@ import soundfile as sf
 import os
 import argparse
 from lite_logging.lite_logging import log
-from recorder import record_until_key_release
-from asr_text import AudioProcessor
-from utils import AUDIO_DIR
+from or_recorder_transcriber.recorder import record_until_key_release
+from or_recorder_transcriber.asr_text import AudioProcessor
+from or_recorder_transcriber.utils import AUDIO_DIR
 
 def cli():
     audio_processor = AudioProcessor(event_logger=True)
@@ -25,7 +25,7 @@ def cli():
 def gui():
     import sys
     from PyQt6.QtWidgets import QApplication
-    from gui import Window  
+    from or_recorder_transcriber.gui import Window  
 
     app = QApplication(sys.argv)
     window = Window()
