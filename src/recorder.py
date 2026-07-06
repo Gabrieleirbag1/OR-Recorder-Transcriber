@@ -4,7 +4,7 @@ import queue
 import threading
 from pynput import keyboard
 from lite_logging.lite_logging import log
-from utils import OUTPUT_DIR
+from utils import AUDIO_DIR
 
 import os
 import queue
@@ -60,7 +60,7 @@ class RecordThread(QThread):
         duration = len(audio) / self.samplerate
         log(f"Recording ended. Duration: {duration:.2f} seconds.")
 
-        output_path = os.path.join(OUTPUT_DIR, self.filename)
+        output_path = os.path.join(AUDIO_DIR, self.filename)
         sf.write(output_path, audio, self.samplerate)
         log(f"File '{output_path}' saved.", level="DEBUG")
 
@@ -119,5 +119,5 @@ if __name__ == "__main__":
     audio, sr = record_until_key_release()
     log(f"Recording ended. Duration: {len(audio) / sr:.2f} seconds.")
     # save the file 
-    sf.write(os.path.join(OUTPUT_DIR, "output.wav"), audio, sr)
+    sf.write(os.path.join(AUDIO_DIR, "output.wav"), audio, sr)
     log("File 'output.wav' saved.", level="DEBUG")

@@ -2,7 +2,7 @@ import json
 import os
 import whisper
 from lite_logging.lite_logging import log
-from utils import OUTPUT_DIR, THRESHOLD
+from utils import AUDIO_DIR, THRESHOLD
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
 
 with open(os.path.join(os.path.dirname(__file__), "medical_context.json"), "r", encoding="utf-8") as f:
@@ -75,7 +75,7 @@ class AudioProcessor:
         return self.best_event
 
 if __name__ == "__main__":
-    audio_file = os.path.join(OUTPUT_DIR, "output.wav")
+    audio_file = os.path.join(AUDIO_DIR, "output.wav")
     if os.path.exists(audio_file):
         audio_processor = AudioProcessor()
         result = audio_processor.evaluate_audio_event(audio_file)
