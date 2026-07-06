@@ -16,7 +16,6 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.record_thread = None
-        self.best_label = None
         self.audio_processor = None
 
         self.setWindowTitle("OR Recorder Transcriber")
@@ -28,7 +27,7 @@ class Window(QMainWindow):
         self.setup_ui()
 
     def load_audio_processor(self):
-        self.audio_processor = AudioProcessor(gui=True)
+        self.audio_processor = AudioProcessor(gui=True, event_logger=True)
         self.audio_processor.load_asr_model()
         self.audio_processor.load_embedding_model()
 
@@ -115,12 +114,15 @@ class Window(QMainWindow):
 
     def on_label_selected(self, element: QPushButton | QComboBox):
         if isinstance(element, QPushButton):
-            self.best_label = element.text()
+            best_label = element.text()
         else:
-            self.best_label = element.currentText()
-        self.status_label.setText(f"Selected label: {self.best_label}")
+            best_label = element.currentText()
+        self.status_label.setText(f"Selected label: {best_label}")
+        if self.audio_processor.event_logger:
+            best_label = best_label if self.audio_processor.classification_result["best_label"] != best_label else None
+            self.audio_processor.log_classification_results(self.audio_processor.classification_result, corrected_label=best_label)
         self.show_ui("recorder")
-        log(f"User selected label: {self.best_label}", level="DEBUG")
+        log(f"User selected label: {best_label}", level="DEBUG")
 
     def on_record_pressed(self):
         self.status_label.setText("Recording...")
@@ -141,13 +143,15 @@ class Window(QMainWindow):
         
         file_path = "/home/frigiel/Documents/VSCODE/Stage LIAM 2026/OR-Recorder-Transcriber/output/audio/output copy.wav"
 
-        result = self.audio_processor.evaluate_audio_event(file_path)
-        if result is None:
+        best_event = self.audio_processor.evaluate_audio_event(file_path)
+        if best_event is None:
             self.status_label.setText(f"Unable to classify audio. Please try again.")
             return
         
-        if float(result["score"]) >= THRESHOLD:
-            self.status_label.setText(f"Best label: {result['label']} (score: {result['score']:.2f})")
+        if float(best_event["score"]) <= THRESHOLD:
+            self.status_label.setText(f"Best label: {best_event['label']} (score: {best_event['score']:.2f})")
+            if self.audio_processor.event_logger:
+                self.audio_processor.log_classification_results(self.audio_processor.classification_result)
             return
         
         for button, event in zip(self.label_buttons, self.audio_processor.events):

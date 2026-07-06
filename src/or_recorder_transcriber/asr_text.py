@@ -11,13 +11,14 @@ with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encodi
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
 class AudioProcessor:
-    def __init__(self, model_name_asr="base", model_name_embedding="paraphrase-multilingual-mpnet-base-v2", gui=False, event_logger=False):
-        self.asr_model_name = model_name_asr
-        self.embedding_model_name = model_name_embedding
+    def __init__(self, asr_model_name="base", embedding_model_name="paraphrase-multilingual-mpnet-base-v2", gui=False, event_logger=False):
+        self.asr_model_name = asr_model_name
+        self.embedding_model_name = embedding_model_name
         self.gui = gui
         self.asr_model = None
-        self.supervised_clustering = None
         self.event_logger = EventLoggerCSV() if event_logger else None
+        self.supervised_clustering = None
+        self.classification_result: dict = {}
         self.best_event: dict = {}
         self.events: list[dict] = [{}]
 
@@ -27,12 +28,12 @@ class AudioProcessor:
 
     def load_asr_model(self):
         self.asr_model = whisper.load_model(self.asr_model_name)
-        log(f"ASR model '{self.asr_model_name}' loaded.", level="DEBUG")
+        log(f"ASR model '{self.asr_model_name}' loaded.")
 
     def load_embedding_model(self):
         self.supervised_clustering = SupervisedClustering([self.embedding_model_name])
         self.supervised_clustering.load_models()
-        log(f"Embedding model '{self.embedding_model_name}' loaded.", level="DEBUG")
+        log(f"Embedding model '{self.embedding_model_name}' loaded.")
 
     def transcribe_audio(self, file_path) -> str:
         if self.asr_model is None:
@@ -87,16 +88,17 @@ class AudioProcessor:
                         log("Invalid selection. No label selected.", level="WARNING")
                 else:
                     log("No label selected by user.", level="WARNING")
-        self.log_classification_results(result)
+        if not self.gui:
+            self.log_classification_results(result)
         return result["top_k"][0]
 
     def evaluate_audio_event(self, file_path):
-        result = self.process_audio_to_label(file_path)
-        if result is None:
+        self.classification_result = self.process_audio_to_label(file_path)
+        if self.classification_result is None:
             log("Unable to classify audio. Please try again.", level="ERROR")
             return None
 
-        self.best_event = self.handle_label_selection(result)
+        self.best_event = self.handle_label_selection(self.classification_result)
         return self.best_event
 
 if __name__ == "__main__":
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     if os.path.exists(audio_file):
         audio_processor = AudioProcessor(event_logger=True)
         audio_processor.load_models()
-        result = audio_processor.evaluate_audio_event(audio_file)
-        log(f"Best event: {result['label']} (score: {result['score']:.2f})")
+        best_event, result = audio_processor.evaluate_audio_event(audio_file)
+        log(f"Best event: {best_event['label']} (score: {best_event['score']:.2f})")
     else:
         log(f"Audio file '{audio_file}' not found. Please record audio first.", level="ERROR")
