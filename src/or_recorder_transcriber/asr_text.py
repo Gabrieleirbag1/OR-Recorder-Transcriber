@@ -18,9 +18,8 @@ class AudioProcessor:
         self.asr_model = None
         self.event_logger = EventLoggerCSV() if event_logger else None
         self.supervised_clustering = None
-        self.classification_result: dict = {}
+        self.classification_results: dict = {}
         self.best_event: dict = {}
-        self.events: list[dict] = [{}]
 
     def load_models(self):
         self.load_asr_model()
@@ -50,7 +49,6 @@ class AudioProcessor:
             return None
 
         results, _ = self.supervised_clustering.match_events_to_labels([text], RAW_LABELS, self.embedding_model_name, top_k=3)
-        self.events = results[0]["top_k"]
         log("Classification results: " + str(results[0]), level="DEBUG")
         return results[0]
     
@@ -69,9 +67,21 @@ class AudioProcessor:
                 corrected_label=corrected_label
             )
 
+    def is_label_confident(self, score, threshold=THRESHOLD) -> bool:
+        if score <= threshold:
+            log(f"Score {score:.2f} is below the threshold {threshold}. Label is not confident.", level="DEBUG")
+            return False
+        events = self.classification_results["top_k"]
+        for i in range(1, len(self.classification_results["top_k"])):
+            diff = self.classification_results["best_score"] - events[i]["score"]
+            if diff < 0.3:
+                log(f"Score difference {diff:.2f} between best score and '{events[i]['label']}' is less than 0.3. Label is not confident.", level="DEBUG")
+                return False
+        return True
+
     def handle_label_selection(self, result):
         best_score = float(result["best_score"])
-        if best_score <= THRESHOLD and not self.gui:
+        if not self.gui and not self.is_label_confident(best_score):
             print("Please select the most appropriate label from the following options:")
             for (i, event) in enumerate(result["top_k"]):
                 print(f"[{i+1}] Label: {event['label']}, Score: {event['score']}")
@@ -93,12 +103,12 @@ class AudioProcessor:
         return result["top_k"][0]
 
     def evaluate_audio_event(self, file_path):
-        self.classification_result = self.process_audio_to_label(file_path)
-        if self.classification_result is None:
+        self.classification_results = self.process_audio_to_label(file_path)
+        if self.classification_results is None:
             log("Unable to classify audio. Please try again.", level="ERROR")
             return None
 
-        self.best_event = self.handle_label_selection(self.classification_result)
+        self.best_event = self.handle_label_selection(self.classification_results)
         return self.best_event
 
 if __name__ == "__main__":

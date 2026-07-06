@@ -118,11 +118,11 @@ class Window(QMainWindow):
         else:
             best_label = element.currentText()
         self.status_label.setText(f"Selected label: {best_label}")
-        if self.audio_processor.event_logger:
-            best_label = best_label if self.audio_processor.classification_result["best_label"] != best_label else None
-            self.audio_processor.log_classification_results(self.audio_processor.classification_result, corrected_label=best_label)
-        self.show_ui("recorder")
         log(f"User selected label: {best_label}", level="DEBUG")
+        if self.audio_processor.event_logger:
+            best_label = best_label if self.audio_processor.classification_results["best_label"] != best_label else None
+            self.audio_processor.log_classification_results(self.audio_processor.classification_results, corrected_label=best_label)
+        self.show_ui("recorder")
 
     def on_record_pressed(self):
         self.status_label.setText("Recording...")
@@ -148,13 +148,13 @@ class Window(QMainWindow):
             self.status_label.setText(f"Unable to classify audio. Please try again.")
             return
         
-        if float(best_event["score"]) <= THRESHOLD:
+        if self.audio_processor.is_label_confident(float(best_event["score"])):
             self.status_label.setText(f"Best label: {best_event['label']} (score: {best_event['score']:.2f})")
             if self.audio_processor.event_logger:
-                self.audio_processor.log_classification_results(self.audio_processor.classification_result)
+                self.audio_processor.log_classification_results(self.audio_processor.classification_results)
             return
         
-        for button, event in zip(self.label_buttons, self.audio_processor.events):
+        for button, event in zip(self.label_buttons, self.audio_processor.classification_results["top_k"]):
             button.setText(event["label"])
 
         self.show_ui("label_selection")
