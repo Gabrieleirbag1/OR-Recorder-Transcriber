@@ -17,6 +17,7 @@ class Window(QMainWindow):
         super().__init__()
         self.record_thread = None
         self.best_label = None
+        self.audio_processor = None
 
         self.setWindowTitle("My Application")
         self.setup()
