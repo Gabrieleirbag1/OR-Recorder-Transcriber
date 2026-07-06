@@ -19,7 +19,7 @@ class Window(QMainWindow):
         self.best_label = None
         self.audio_processor = None
 
-        self.setWindowTitle("My Application")
+        self.setWindowTitle("OR Recorder Transcriber")
         self.setup()
 
     def setup(self):
