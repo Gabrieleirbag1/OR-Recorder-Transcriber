@@ -42,7 +42,6 @@ class AudioProcessor:
     
     def process_audio_to_label(self, file_path) -> dict | None:
         text = self.transcribe_audio(file_path)
-        text = "dlzeofdnazeoidhazoedouazhdauozehuazhduhaezudhaezhdazeu"
         log(f"Transcribed : '{text}'")
 
         if not text:

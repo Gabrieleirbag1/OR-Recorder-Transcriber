@@ -28,6 +28,7 @@ class EventLoggerCSV:
         else:
             current_time = datetime.datetime.now()
             relative_time = (current_time - self.start_time).total_seconds()
+            relative_time = round(relative_time, 0)
             return relative_time
         
     def append_to_csv_file(self, event, dose, event_type, selected_label, score, corrected_label=None):
