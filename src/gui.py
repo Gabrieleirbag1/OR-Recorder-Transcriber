@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 from lite_logging.lite_logging import log
@@ -7,9 +7,11 @@ from recorder import RecordThread
 from asr_text import AudioProcessor
 import os
 import sys
+import json
 
 ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
-
+with open(os.path.join(os.path.dirname(__file__), "labels.json"), "r", encoding="utf-8") as f:
+    RAW_LABELS = json.load(f)
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -62,8 +64,8 @@ class Window(QMainWindow):
 
     def setup_recorder_ui(self):
         self.recorder_widget = QWidget()
-        layout = QVBoxLayout()
-        self.recorder_widget.setLayout(layout)
+        self.recorder_layout = QVBoxLayout()
+        self.recorder_widget.setLayout(self.recorder_layout)
 
         self.micro_image_pixmap = QPixmap(os.path.join(ASSETS_PATH, "mic_dark.svg"))
         self.record_button = QPushButton()
@@ -73,18 +75,18 @@ class Window(QMainWindow):
         self.record_button.setIconSize(self.micro_image_pixmap.size())
         self.record_button.pressed.connect(self.on_record_pressed)
         self.record_button.released.connect(self.on_record_released)
-        layout.addWidget(self.record_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.recorder_layout.addWidget(self.record_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.status_label = QLabel("")
-        layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.recorder_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def setup_label_selection_ui(self):
         self.label_selection_widget = QWidget()
-        layout = QVBoxLayout()
-        self.label_selection_widget.setLayout(layout)
+        self.label_selection_layout = QVBoxLayout()
+        self.label_selection_widget.setLayout(self.label_selection_layout)
 
-        select_label = QLabel("Select the most appropriate label:")
-        layout.addWidget(select_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.select_label = QLabel("Select the most appropriate label:")
+        self.label_selection_layout.addWidget(self.select_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.buttons_layout = QHBoxLayout()
         self.label_buttons = []
@@ -94,10 +96,27 @@ class Window(QMainWindow):
             self.label_buttons.append(button)
             self.buttons_layout.addWidget(button)
 
-        layout.addLayout(self.buttons_layout)
+        self.label_combobox_selection_widget = QWidget()
+        self.label_combobox_selection_layout = QHBoxLayout()
+        self.label_combobox_selection_widget.setLayout(self.label_combobox_selection_layout)
 
-    def on_label_selected(self, button):
-        self.best_label = button.text()
+        self.labels_combobox = QComboBox()
+        self.labels_combobox.addItems(RAW_LABELS)
+
+        self.confirm_button = QPushButton("Confirm Selection")
+        self.confirm_button.clicked.connect(lambda: self.on_label_selected(self.labels_combobox))
+
+        self.label_combobox_selection_layout.addWidget(self.labels_combobox)
+        self.label_combobox_selection_layout.addWidget(self.confirm_button)
+
+        self.label_selection_layout.addLayout(self.buttons_layout)
+        self.label_selection_layout.addWidget(self.label_combobox_selection_widget, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def on_label_selected(self, element: QPushButton | QComboBox):
+        if isinstance(element, QPushButton):
+            self.best_label = element.text()
+        else:
+            self.best_label = element.currentText()
         self.status_label.setText(f"Selected label: {self.best_label}")
         self.show_ui("recorder")
         log(f"User selected label: {self.best_label}", level="DEBUG")
