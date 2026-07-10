@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QPixmap
+from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QPixmap
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, THRESHOLD
 from or_recorder_transcriber.recorder import RecordThread

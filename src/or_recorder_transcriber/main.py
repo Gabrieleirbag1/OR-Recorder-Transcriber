@@ -24,7 +24,7 @@ def cli():
 
 def gui():
     import sys
-    from PyQt6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication
     from or_recorder_transcriber.gui import Window  
 
     app = QApplication(sys.argv)
