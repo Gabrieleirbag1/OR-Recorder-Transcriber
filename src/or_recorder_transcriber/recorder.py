@@ -12,11 +12,11 @@ import threading
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
-from PySide6.QtCore import QThread, pyqtSignal
+from PySide6.QtCore import QThread, Signal
 
 class RecordThread(QThread):
-    finished_recording = pyqtSignal(str)
-    recording_failed = pyqtSignal(str)
+    finished_recording = Signal(str)
+    recording_failed = Signal(str)
 
     def __init__(self, samplerate=16000, filename="output.wav", parent=None):
         super().__init__(parent)
