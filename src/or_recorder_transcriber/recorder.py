@@ -12,7 +12,7 @@ import threading
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
-from PyQt6.QtCore import QThread, pyqtSignal
+from PySide6.QtCore import QThread, pyqtSignal
 
 class RecordThread(QThread):
     finished_recording = pyqtSignal(str)
