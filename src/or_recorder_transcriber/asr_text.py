@@ -31,7 +31,7 @@ class AudioProcessor:
 
     def load_embedding_model(self):
         self.supervised_clustering = SupervisedClustering([self.embedding_model_name])
-        self.supervised_clustering.load_models()
+        self.supervised_clustering.load_models(RAW_LABELS)
         log(f"Embedding model '{self.embedding_model_name}' loaded.")
 
     def transcribe_audio(self, file_path) -> str:
