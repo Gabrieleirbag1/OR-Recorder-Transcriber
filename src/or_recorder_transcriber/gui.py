@@ -9,14 +9,16 @@ import os
 import sys
 import json
 
+THEME = "dark" if QApplication().styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
+
 with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
     RAW_LABELS = json.load(f)
-
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
         self.record_thread = None
         self.audio_processor = None
+        self.is_recording = False
 
         self.setWindowTitle("OR Recorder Transcriber")
         self.setup()
@@ -67,14 +69,17 @@ class Window(QMainWindow):
         self.recorder_layout = QVBoxLayout()
         self.recorder_widget.setLayout(self.recorder_layout)
 
-        self.micro_image_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", "mic_dark.svg"))
+        mic_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"mic_{THEME}.svg"))
+        self.mic_icon = QIcon(mic_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+
+        stop_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"stop_{THEME}.svg"))
+        self.stop_icon = QIcon(stop_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+
         self.record_button = QPushButton()
         self.record_button.setFixedSize(120, 120)
-        self.micro_image_pixmap = self.micro_image_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        self.record_button.setIcon(QIcon(self.micro_image_pixmap))
-        self.record_button.setIconSize(self.micro_image_pixmap.size())
-        self.record_button.pressed.connect(self.on_record_pressed)
-        self.record_button.released.connect(self.on_record_released)
+        self.record_button.setIcon(self.mic_icon)
+        self.record_button.setIconSize(mic_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation).size())
+        self.record_button.clicked.connect(self.on_record_clicked)
         self.recorder_layout.addWidget(self.record_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.status_label = QLabel("")
@@ -124,36 +129,47 @@ class Window(QMainWindow):
             self.audio_processor.log_classification_results(self.audio_processor.classification_results, corrected_label=best_label)
         self.show_ui("recorder")
 
-    def on_record_pressed(self):
+    def on_record_clicked(self):
+        if not self.is_recording:
+            self.start_recording()
+        else:
+            self.stop_recording()
+
+    def start_recording(self):
+        self.is_recording = True
+        self.record_button.setIcon(self.stop_icon)
         self.status_label.setText("Recording...")
         self.record_button.setStyleSheet("background-color: red")
+
         self.record_thread = RecordThread(samplerate=16000, filename="output.wav")
         self.record_thread.finished_recording.connect(self.on_recording_finished)
         self.record_thread.recording_failed.connect(self.on_recording_failed)
         self.record_thread.start()
 
-    def on_record_released(self):
-        self.status_label.setText("Processing...")
+    def stop_recording(self):
+        self.is_recording = False
+        self.record_button.setIcon(self.mic_icon)
         self.record_button.setStyleSheet("")
+        self.status_label.setText("Processing...")
         if self.record_thread is not None:
             self.record_thread.stop()
 
     def on_recording_finished(self, file_path):
         self.status_label.setText(f"Saved : {file_path}")
-        
+
         file_path = "/home/frigiel/Documents/VSCODE/Stage LIAM 2026/OR-Recorder-Transcriber/output/audio/output copy.wav"
 
         best_event = self.audio_processor.evaluate_audio_event(file_path)
         if best_event is None:
             self.status_label.setText(f"Unable to classify audio. Please try again.")
             return
-        
+
         if self.audio_processor.is_label_confident(float(best_event["score"])):
             self.status_label.setText(f"Best label: {best_event['label']} (score: {best_event['score']:.2f})")
             if self.audio_processor.event_logger:
                 self.audio_processor.log_classification_results(self.audio_processor.classification_results)
             return
-        
+
         for button, event in zip(self.label_buttons, self.audio_processor.classification_results["top_k"]):
             button.setText(event["label"])
 
