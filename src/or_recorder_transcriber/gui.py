@@ -28,16 +28,12 @@ class Window(QMainWindow):
         self.setup_ui()
 
     def load_audio_processor(self):
-        self.audio_processor = AudioProcessor(gui=True, event_logger=True)
+        self.audio_processor = AudioProcessor(asr_model_name="tiny", gui=True, event_logger=True)
         self.audio_processor.load_asr_model()
         self.audio_processor.load_embedding_model()
 
     def setup_size(self):
-        screen = QApplication.primaryScreen()
-        screen_size = screen.size()
-        width = int(screen_size.width() * 0.5)
-        height = int(screen_size.height() * 0.5)
-        self.setGeometry(100, 100, width, height)
+        self.showMaximized()
 
     def setup_ui(self):
         self.main_layout = QVBoxLayout()
@@ -92,7 +88,7 @@ class Window(QMainWindow):
         self.select_label = QLabel("Select the most appropriate label:")
         self.label_selection_layout.addWidget(self.select_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.buttons_layout = QHBoxLayout()
+        self.buttons_layout = QVBoxLayout()
         self.label_buttons = []
         for i in range(3):
             button = QPushButton(f"Label {i+1}")
