@@ -2,20 +2,19 @@ from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPu
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import ASSETS_PATH, THRESHOLD
+from or_recorder_transcriber.utils import ASSETS_PATH
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor
 import os
 import sys
 import json
 
-THEME = "dark" if QApplication().styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
-
 with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
     RAW_LABELS = json.load(f)
 class Window(QMainWindow):
-    def __init__(self):
+    def __init__(self, theme="light"):
         super().__init__()
+        self.theme = theme
         self.record_thread = None
         self.audio_processor = None
         self.is_recording = False
@@ -69,10 +68,10 @@ class Window(QMainWindow):
         self.recorder_layout = QVBoxLayout()
         self.recorder_widget.setLayout(self.recorder_layout)
 
-        mic_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"mic_{THEME}.svg"))
+        mic_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"mic_{self.theme}.svg"))
         self.mic_icon = QIcon(mic_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
-        stop_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"stop_{THEME}.svg"))
+        stop_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"stop_{self.theme}.svg"))
         self.stop_icon = QIcon(stop_pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
         self.record_button = QPushButton()
@@ -178,8 +177,9 @@ class Window(QMainWindow):
     def on_recording_failed(self, error_message):
         self.status_label.setText(f"Recording failed : {error_message}")
 
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
-    window = Window()
+    theme = "dark" if app.styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
+    window = Window(theme)
     window.show()
     sys.exit(app.exec())

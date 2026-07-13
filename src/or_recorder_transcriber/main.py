@@ -23,14 +23,8 @@ def cli():
         log(f"Classification results: {result}")
 
 def gui():
-    import sys
-    from PySide6.QtWidgets import QApplication
-    from or_recorder_transcriber.gui import Window  
-
-    app = QApplication(sys.argv)
-    window = Window()
-    window.show()
-    sys.exit(app.exec())
+    from or_recorder_transcriber.gui import main as gui_main
+    gui_main()
 
 def main():
     parser = argparse.ArgumentParser(description="Fine-tune a SetFit model on a training dataset")
