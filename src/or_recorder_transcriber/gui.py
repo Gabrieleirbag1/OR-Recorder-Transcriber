@@ -39,8 +39,8 @@ class Window(QMainWindow):
         screen_size = screen.size()
         if screen_size.width() < 960 or screen_size.height() < 640:
             self.setMaximumSize(screen_size.width(), screen_size.height())
-            self.resize(380, 240)
-        self.resize(960, 640)
+        else:
+            self.resize(960, 640)
         self.setFont(QFont("Arial", 14))
 
     def setup_ui(self):
