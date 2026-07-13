@@ -162,7 +162,7 @@ class Window(QMainWindow):
     def on_recording_finished(self, file_path):
         self.status_label.setText(f"Saved : {file_path}")
 
-        file_path = "/home/frigiel/Documents/VSCODE/Stage LIAM 2026/OR-Recorder-Transcriber/output/audio/output copy.wav"
+        # file_path = "/home/frigiel/Documents/VSCODE/Stage LIAM 2026/OR-Recorder-Transcriber/output/audio/output copy.wav"
 
         best_event = self.audio_processor.evaluate_audio_event(file_path)
         if best_event is None:
