@@ -39,7 +39,7 @@ class Window(QMainWindow):
         screen_size = screen.size()
         if screen_size.width() < 960 or screen_size.height() < 640:
             self.setMaximumSize(screen_size.width(), screen_size.height())
-            self.resize(screen_size.width(), screen_size.height() - 120)
+            self.resize(380, 240)
         self.resize(960, 640)
         self.setFont(QFont("Arial", 14))
 
@@ -108,12 +108,14 @@ class Window(QMainWindow):
 
         self.label_combobox_selection_widget = QWidget()
         self.label_combobox_selection_layout = QHBoxLayout()
+        self.label_combobox_selection_layout.setSpacing(10)
         self.label_combobox_selection_widget.setLayout(self.label_combobox_selection_layout)
 
         self.labels_combobox = QComboBox()
+        self.labels_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.labels_combobox.addItems(RAW_LABELS)
 
-        self.confirm_button = QPushButton("Confirm Selection")
+        self.confirm_button = QPushButton("Ok")
         self.confirm_button.clicked.connect(lambda: self.on_label_selected(self.labels_combobox))
 
         self.label_combobox_selection_layout.addWidget(self.labels_combobox)
