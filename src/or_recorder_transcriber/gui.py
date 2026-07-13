@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH
 from or_recorder_transcriber.recorder import RecordThread
@@ -33,7 +33,15 @@ class Window(QMainWindow):
         self.audio_processor.load_embedding_model()
 
     def setup_size(self):
-        self.showMaximized()
+        self.setMaximumSize(960, 640)
+        ## check screen size and set window size accordingly
+        screen = QApplication.primaryScreen()
+        scree = screen.size()
+        if scree.width() < 960 or scree.height() < 640:
+            self.setMaximumSize(scree.width(), scree.height())
+            self.resize(scree.width(), scree.height())
+        self.resize(960, 640)
+        self.setFont(QFont("Arial", 16))
 
     def setup_ui(self):
         self.main_layout = QVBoxLayout()
@@ -44,7 +52,7 @@ class Window(QMainWindow):
         self.setup_label_selection_ui()
 
         self.main_layout.addWidget(self.recorder_widget)
-        self.main_layout.addWidget(self.label_selection_widget)
+        self.main_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.setCentralWidget(main_widget)
         self.show_ui("recorder")
@@ -83,7 +91,9 @@ class Window(QMainWindow):
     def setup_label_selection_ui(self):
         self.label_selection_widget = QWidget()
         self.label_selection_layout = QVBoxLayout()
+        self.label_selection_layout.setSpacing(20)
         self.label_selection_widget.setLayout(self.label_selection_layout)
+        self.label_selection_widget.setFixedWidth(self.width() * 2 // 3)
 
         self.select_label = QLabel("Select the most appropriate label:")
         self.label_selection_layout.addWidget(self.select_label, alignment=Qt.AlignmentFlag.AlignCenter)
