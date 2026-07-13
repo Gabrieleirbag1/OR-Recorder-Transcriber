@@ -39,10 +39,11 @@ class Window(QMainWindow):
         screen_size = screen.size()
         if screen_size.width() < 960 or screen_size.height() < 640:
             self.setMaximumSize(screen_size.width(), screen_size.height())
-            self.resize(screen_size.width(), screen_size.height())
+            self.setFixedSize(screen_size.width(), screen_size.height() - 100)
+            self.setFont(QFont("Arial", 12))
         else:
             self.resize(960, 640)
-        self.setFont(QFont("Arial", 14))
+            self.setFont(QFont("Arial", 16))
 
     def setup_ui(self):
         self.main_layout = QVBoxLayout()
@@ -92,7 +93,7 @@ class Window(QMainWindow):
     def setup_label_selection_ui(self):
         self.label_selection_widget = QWidget()
         self.label_selection_layout = QVBoxLayout()
-        self.label_selection_layout.setSpacing(15)
+        self.label_selection_layout.setSpacing(10)
         self.label_selection_widget.setLayout(self.label_selection_layout)
         self.label_selection_widget.setFixedWidth(self.width() * 2 // 3)
 
