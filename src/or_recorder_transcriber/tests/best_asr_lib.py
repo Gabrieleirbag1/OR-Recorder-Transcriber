@@ -1,5 +1,6 @@
 import whisper
 import faster_whisper
+from pywhispercpp.model import Model
 import time
 import os
 from lite_logging.lite_logging import log
@@ -18,6 +19,11 @@ def load_faster_whisper_model(model_name="base"):
     log(f"Faster Whisper model '{model_name}' loaded.")
     return model
 
+def load_pywhispercpp_model(model_name="base"):
+    model = Model('base', n_threads=6)
+    log(f"PyWhisperCpp model '{model_name}' loaded.")
+    return model
+
 def transcribe_audio(file_path, model):
     chronomètre = time.time()
     result = model.transcribe(file_path)
@@ -26,5 +32,7 @@ def transcribe_audio(file_path, model):
 
 whisper_model = load_whisper_model("base")
 faster_whisper_model = load_faster_whisper_model("base")
+pywhispercpp_model = load_pywhispercpp_model("base")
 transcribed_whisper = transcribe_audio(file_path, whisper_model)
 transcribed_faster_whisper = transcribe_audio(file_path, faster_whisper_model)
+transcribed_pywhispercpp = transcribe_audio(file_path, pywhispercpp_model)
