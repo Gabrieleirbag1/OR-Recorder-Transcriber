@@ -11,12 +11,14 @@ class ConfigWindow(QMainWindow):
         super().__init__()
         self.theme = theme
         self.config = config
+
+        self.main_window = None
         
         self.setup()
 
     def setup(self):
         self.setWindowTitle("Configuration")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(380, 300)
         self.setup_ui()
 
     def setup_ui(self):
@@ -75,7 +77,7 @@ class ConfigWindow(QMainWindow):
         }
         ConfigManager.update_config(self.config)
         self.close()
-        window = ConfigManager.load_window(MainWindow, self.theme, self.config)
+        self.main_window = ConfigManager.load_window(MainWindow, self.theme, self.config)
 
     def select_directory(self):
         selected_dir = QFileDialog.getExistingDirectory(
@@ -94,6 +96,8 @@ class ConfigManager:
         self.config = None
         self.theme = theme
 
+        self.window = None
+
         self.__load_config()
 
     def __load_config(self):
@@ -101,13 +105,13 @@ class ConfigManager:
             with open(os.path.join(CONFIG_PATH, "config.json"), "r", encoding="utf-8") as f:
                 self.config = json.load(f)
                 log("Loaded configuration from 'config.json'.", level="DEBUG")
-                window = self.load_window(MainWindow, self.theme, self.config)
+                self.window = self.load_window(MainWindow, self.theme, self.config)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             log(f"Error loading config: {e}", level="ERROR")
             with open(os.path.join(CONFIG_PATH, "default_config.json"), "r", encoding="utf-8") as f:
                 self.config = json.load(f)
                 log("Loaded default configuration.", level="DEBUG")
-            window = self.load_window(ConfigWindow, self.theme, self.config)
+            self.window = self.load_window(ConfigWindow, self.theme, self.config)
 
     @staticmethod
     def update_config(new_config):
@@ -127,5 +131,6 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     theme = "dark" if app.styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
-    config_manager = ConfigManager(theme)
+    config_window = ConfigWindow(theme)
+    config_window.show()
     sys.exit(app.exec())
