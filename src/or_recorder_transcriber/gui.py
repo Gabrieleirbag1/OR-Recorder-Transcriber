@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPu
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import ASSETS_PATH
+from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor
 import os
@@ -166,7 +166,7 @@ class Window(QMainWindow):
     def on_recording_finished(self, file_path):
         self.status_label.setText(f"Saved : {file_path}")
 
-        # file_path = "/home/frigiel/Documents/VSCODE/Stage LIAM 2026/OR-Recorder-Transcriber/output/audio/output copy.wav"
+        file_path = os.path.join(os.path.dirname(__file__), AUDIO_DIR, "output_copy.wav")
 
         best_event = self.audio_processor.evaluate_audio_event(file_path)
         if best_event is None:

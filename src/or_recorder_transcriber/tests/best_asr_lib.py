@@ -4,7 +4,7 @@ import time
 import os
 from lite_logging.lite_logging import log
 
-file_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "output", "audio", "output copy.wav")
+file_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "output", "audio", "output_copy.wav")
 print(os.path.abspath(file_path))
 
 
