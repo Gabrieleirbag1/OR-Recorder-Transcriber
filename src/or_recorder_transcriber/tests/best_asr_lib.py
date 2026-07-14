@@ -86,7 +86,7 @@ def print_summary_table(results):
 all_results = []
 
 for model_name in ["tiny", "base", "small"]:
-    log(f"\n--- ÉVALUATION DU MODELE : {model_name.upper()} ---")
+    log(f"--- EVALUATING MODEL : {model_name.upper()} ---")
     
     # 1. OpenAI Whisper
     whisper_model = load_whisper_model(model_name)
