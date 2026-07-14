@@ -17,13 +17,18 @@ def load_whisper_model(model_name="base"):
     return model
 
 def load_faster_whisper_model(model_name="base"):
-    model = faster_whisper.WhisperModel(model_name)
+    model = faster_whisper.WhisperModel(
+        model_name,
+        device="cpu",
+        compute_type="int8",
+        cpu_threads=4
+    )
     log(f"Faster Whisper model '{model_name}' loaded.")
     return model
 
 def load_pywhispercpp_model(model_name="base"):
     # Note : On force l'utilisation de model_name passé en paramètre
-    model = Model(model_name, n_threads=6)
+    model = Model(model_name, n_threads=4)
     log(f"PyWhisperCpp model '{model_name}' loaded.")
     return model
 
@@ -32,7 +37,7 @@ def load_pywhispercpp_model(model_name="base"):
 
 def transcribe_whisper_audio(file_path, model):
     chronomètre = time.time()
-    result = model.transcribe(file_path)
+    result = model.transcribe(file_path, language="fr")
     elapsed = time.time() - chronomètre
     log(f"Audio processed in {elapsed:.2f} seconds.")
     return result["text"].strip(), elapsed
@@ -42,7 +47,7 @@ def transcribe_faster_whisper_audio(file_path, model):
     segments, info = model.transcribe(
         file_path,
         language="fr",
-        beam_size=5,
+        beam_size=1,
     )
     elapsed = time.time() - chronomètre
     text = " ".join(segment.text for segment in segments).strip()
@@ -51,7 +56,7 @@ def transcribe_faster_whisper_audio(file_path, model):
 
 def transcribe_pywhispercpp_audio(file_path, model):
     chronomètre = time.time()
-    result = model.transcribe(file_path)
+    result = model.transcribe(file_path, language="fr")
     elapsed = time.time() - chronomètre
     text = result[0].text.strip() if result else ""
     log(f"Audio processed in {elapsed:.2f} seconds.")
@@ -85,7 +90,7 @@ def print_summary_table(results):
 # List to store result dictionaries
 all_results = []
 
-for model_name in ["tiny", "base", "small"]:
+for model_name in ["tiny", "base"]:
     log(f"--- EVALUATING MODEL : {model_name.upper()} ---")
     
     # 1. OpenAI Whisper
