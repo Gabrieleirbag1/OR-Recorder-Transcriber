@@ -1,8 +1,7 @@
 import json
 import os
 import re
-import faster_whisper
-import whisper
+
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR, THRESHOLD
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
@@ -11,7 +10,7 @@ from or_recorder_transcriber.event_logger import EventLoggerCSV
 with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
-ASR_MODE = "faster_whisper"  # or "whisper"
+ASR_MODE = "faster_whisper"  # or "whisper" or "pywhispercpp"
 
 class AudioProcessor:
     def __init__(self, asr_model_name="base", embedding_model_name="paraphrase-multilingual-mpnet-base-v2", gui=False, event_logger=False):
@@ -30,10 +29,14 @@ class AudioProcessor:
 
     def load_asr_model(self):
         if ASR_MODE == "faster_whisper":
+            import faster_whisper
             self.asr_model = faster_whisper.WhisperModel(self.asr_model_name)
+        elif ASR_MODE == "pywhispercpp":
+            from pywhispercpp.model import Model
+            self.asr_model = Model(self.asr_model_name, n_threads=6)
         else:
+            import whisper
             self.asr_model = whisper.load_model(self.asr_model_name)
-        self.asr_model = whisper.load_model(self.asr_model_name)
         log(f"ASR model '{self.asr_model_name}' loaded.")
 
     def load_embedding_model(self):
@@ -44,8 +47,20 @@ class AudioProcessor:
     def transcribe_audio(self, file_path) -> str:
         if self.asr_model is None:
             self.load_asr_model()
+            
         if ASR_MODE == "faster_whisper":
-            result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
+            segments, info = self.asr_model.transcribe(
+                file_path,
+                initial_prompt=MEDICAL_CONTEXT,
+                language="fr",
+                beam_size=5,
+            )
+            return " ".join(segment.text for segment in segments).strip()
+        elif ASR_MODE == "pywhispercpp":
+            result = self.asr_model.transcribe(file_path)
+            return result[0].text.strip() if result else ""
+        else:
+            result = self.asr_model.transcribe(file_path)
             return result["text"]
     
     def process_audio_to_label(self, file_path) -> dict | None:
