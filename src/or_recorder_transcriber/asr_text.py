@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import faster_whisper
 import whisper
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR, THRESHOLD
@@ -9,6 +10,8 @@ from or_recorder_transcriber.event_logger import EventLoggerCSV
 
 with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
+
+ASR_MODE = "faster_whisper"  # or "whisper"
 
 class AudioProcessor:
     def __init__(self, asr_model_name="base", embedding_model_name="paraphrase-multilingual-mpnet-base-v2", gui=False, event_logger=False):
@@ -26,6 +29,10 @@ class AudioProcessor:
         self.load_embedding_model()
 
     def load_asr_model(self):
+        if ASR_MODE == "faster_whisper":
+            self.asr_model = faster_whisper.WhisperModel(self.asr_model_name)
+        else:
+            self.asr_model = whisper.load_model(self.asr_model_name)
         self.asr_model = whisper.load_model(self.asr_model_name)
         log(f"ASR model '{self.asr_model_name}' loaded.")
 
@@ -37,8 +44,9 @@ class AudioProcessor:
     def transcribe_audio(self, file_path) -> str:
         if self.asr_model is None:
             self.load_asr_model()
-        result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
-        return result["text"]
+        if ASR_MODE == "faster_whisper":
+            result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT)
+            return result["text"]
     
     def process_audio_to_label(self, file_path) -> dict | None:
         text = self.transcribe_audio(file_path)
