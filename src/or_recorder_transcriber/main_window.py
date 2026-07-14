@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QApplication, QComboBox, QFileDialog, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR, CONFIG_PATH
@@ -11,36 +11,65 @@ import json
 with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
     RAW_LABELS = json.load(f)
 
+class ModelLoaderThread(QThread):
+    finished_loading = Signal()
+    loading_failed = Signal(str)
+
+    def __init__(self, audio_processor, parent=None):
+        super().__init__(parent)
+        self.audio_processor = audio_processor
+
+    def run(self):
+        try:
+            self.audio_processor.load_asr_model()
+            self.audio_processor.load_embedding_model()
+            self.finished_loading.emit()
+        except Exception as e:
+            self.loading_failed.emit(str(e))
+
+
 class MainWindow(QMainWindow):
-    def __init__(self, config, theme="light",):
+    def __init__(self, config, theme="light"):
         super().__init__()
         self.theme = theme
         self.config = config
-
         self.record_thread = None
         self.audio_processor = None
         self.is_recording = False
+        self.model_loader = None
 
         self.setWindowTitle("OR Recorder Transcriber")
         self.setup()
 
     def setup(self):
-        self.load_audio_processor()
         self.setup_size()
         self.setup_ui()
+        self.record_button.setEnabled(False)
+        self.status_label.setText("Loading models, please wait...")
+        self.load_audio_processor()  # ne bloque plus l'UI
 
     def load_audio_processor(self):
-        if self.audio_processor is None:
-            self.audio_processor = AudioProcessor(
-                asr_model_name=self.config["asr_model_name"],
-                embedding_model_name=self.config["embedding_model_name"],
-                asr_mode=self.config["asr_mode"],
-                language=self.config["language"],
-                gui=True, 
-                event_logger=True
-            )
-        self.audio_processor.load_asr_model()
-        self.audio_processor.load_embedding_model()
+        self.audio_processor = AudioProcessor(
+            asr_model_name=self.config["asr_model_name"],
+            embedding_model_name=self.config["embedding_model_name"],
+            asr_mode=self.config["asr_mode"],
+            language=self.config["language"],
+            gui=True,
+            event_logger=True
+        )
+        self.model_loader = ModelLoaderThread(self.audio_processor)
+        self.model_loader.finished_loading.connect(self.on_models_loaded)
+        self.model_loader.loading_failed.connect(self.on_models_failed)
+        self.model_loader.start()
+
+    def on_models_loaded(self):
+        self.record_button.setEnabled(True)
+        self.status_label.setText("Ready.")
+        log("Models loaded successfully.", level="DEBUG")
+
+    def on_models_failed(self, error_message):
+        self.status_label.setText(f"Failed to load models: {error_message}")
+        log(f"Model loading failed: {error_message}", level="ERROR")
 
     def setup_size(self):
         self.setMaximumSize(960, 640)

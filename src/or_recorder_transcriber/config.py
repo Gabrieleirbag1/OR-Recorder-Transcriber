@@ -1,5 +1,3 @@
-    
-
 import os
 import json
 from lite_logging.lite_logging import log
@@ -122,3 +120,12 @@ class ConfigManager:
         window_instance = ConfigWindow(theme, config) if window == ConfigWindow else MainWindow(config, theme)
         window_instance.show()
         return window_instance
+
+if __name__ == "__main__":
+    from PySide6.QtWidgets import QApplication
+    import sys
+
+    app = QApplication(sys.argv)
+    theme = "dark" if app.styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
+    config_manager = ConfigManager(theme)
+    sys.exit(app.exec())
