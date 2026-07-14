@@ -1,0 +1,6 @@
+{
+    "asr_model_name": "tiny", 
+    "embedding_model_name": "paraphrase-multilingual-mpnet-base-v2", 
+    "asr_mode": "faster_whisper", 
+    "language": "fr"
+}
