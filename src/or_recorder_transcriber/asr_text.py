@@ -10,12 +10,20 @@ from or_recorder_transcriber.event_logger import EventLoggerCSV
 with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
-ASR_MODE = "faster_whisper"  # or "whisper" or "pywhispercpp"
-
 class AudioProcessor:
-    def __init__(self, asr_model_name="base", embedding_model_name="paraphrase-multilingual-mpnet-base-v2", gui=False, event_logger=False):
+    def __init__(
+            self, 
+            asr_model_name="base", 
+            embedding_model_name="paraphrase-multilingual-mpnet-base-v2", 
+            asr_mode="faster_whisper", 
+            language="fr", 
+            gui=False, 
+            event_logger=False
+        ):
         self.asr_model_name = asr_model_name
         self.embedding_model_name = embedding_model_name
+        self.asr_mode = asr_mode
+        self.language = language
         self.gui = gui
         self.asr_model = None
         self.event_logger = EventLoggerCSV() if event_logger else None
@@ -28,12 +36,17 @@ class AudioProcessor:
         self.load_embedding_model()
 
     def load_asr_model(self):
-        if ASR_MODE == "faster_whisper":
+        if self.asr_mode == "faster_whisper":
             import faster_whisper
-            self.asr_model = faster_whisper.WhisperModel(self.asr_model_name)
-        elif ASR_MODE == "pywhispercpp":
+            self.asr_model = faster_whisper.WhisperModel(
+                self.asr_model_name, 
+                device="cpu", 
+                cpu_threads=4, 
+                compute_type="int8"
+            )
+        elif self.asr_mode == "pywhispercpp":
             from pywhispercpp.model import Model
-            self.asr_model = Model(self.asr_model_name, n_threads=6)
+            self.asr_model = Model(self.asr_model_name, n_threads=4)
         else:
             import whisper
             self.asr_model = whisper.load_model(self.asr_model_name)
@@ -48,19 +61,19 @@ class AudioProcessor:
         if self.asr_model is None:
             self.load_asr_model()
             
-        if ASR_MODE == "faster_whisper":
+        if self.asr_mode == "faster_whisper":
             segments, info = self.asr_model.transcribe(
                 file_path,
                 initial_prompt=MEDICAL_CONTEXT,
                 language="fr",
-                beam_size=5,
+                beam_size=1,
             )
             return " ".join(segment.text for segment in segments).strip()
-        elif ASR_MODE == "pywhispercpp":
-            result = self.asr_model.transcribe(file_path)
+        elif self.asr_mode == "pywhispercpp":
+            result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT, language="fr")
             return result[0].text.strip() if result else ""
         else:
-            result = self.asr_model.transcribe(file_path)
+            result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT, language="fr")
             return result["text"]
     
     def process_audio_to_label(self, file_path) -> dict | None:
@@ -132,13 +145,3 @@ class AudioProcessor:
 
         self.best_event = self.handle_label_selection(self.classification_results)
         return self.best_event
-
-if __name__ == "__main__":
-    audio_file = os.path.join(AUDIO_DIR, "output.wav")
-    if os.path.exists(audio_file):
-        audio_processor = AudioProcessor(event_logger=True)
-        audio_processor.load_models()
-        best_event, result = audio_processor.evaluate_audio_event(audio_file)
-        log(f"Best event: {best_event['label']} (score: {best_event['score']:.2f})")
-    else:
-        log(f"Audio file '{audio_file}' not found. Please record audio first.", level="ERROR")

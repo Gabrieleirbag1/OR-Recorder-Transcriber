@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QApplication, QComboBox, QFileDialog, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
@@ -11,10 +11,102 @@ import json
 
 with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
     RAW_LABELS = json.load(f)
-class Window(QMainWindow):
+
+DEFAULT_CONFIG = {
+    "asr_model_name": "tiny", 
+    "embedding_model_name": "paraphrase-multilingual-mpnet-base-v2", 
+    "asr_mode": "faster_whisper", 
+    "language": "fr"
+}
+
+class ConfigWindow(QMainWindow):
     def __init__(self, theme="light"):
         super().__init__()
         self.theme = theme
+        self.config = DEFAULT_CONFIG
+        
+        self.setup()
+
+    def setup(self):
+        self.setWindowTitle("Configuration")
+        self.setFixedSize(400, 300)
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QVBoxLayout()
+        main_widget = QWidget()
+        main_widget.setLayout(layout)
+
+        self.asr_model_label = QLabel("ASR Model:")
+        self.asr_model_combobox = QComboBox()
+        self.asr_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.asr_model_combobox.addItems(["tiny", "base", "small", "medium", "large"])
+
+        self.embedding_model_label = QLabel("Embedding Model:")
+        self.embedding_model_combobox = QComboBox()
+        self.embedding_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.embedding_model_combobox.addItems(["paraphrase-multilingual-mpnet-base-v2"])
+        self.embedding_model_browse = QPushButton("Select Embedding Model Directory")
+        self.embedding_model_browse.clicked.connect(self.select_directory)
+
+        self.asr_mode_label = QLabel("ASR Mode:")
+        self.asr_mode_combobox = QComboBox()
+        self.asr_mode_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.asr_mode_combobox.addItems(["faster_whisper", "whisper", "pywhispercpp"])
+
+        self.language_label = QLabel("Language:")
+        self.language_combobox = QComboBox()
+        self.language_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.language_combobox.addItems(["fr", "en", "es", "de", "it", "pt", "nl", "ru", "zh"])
+
+        self.confirm_button = QPushButton("Confirm")
+        self.confirm_button.clicked.connect(self.on_confirm)
+
+        layout.addWidget(self.asr_model_label)
+        layout.addWidget(self.asr_model_combobox)
+        layout.addWidget(self.embedding_model_label)
+        layout.addWidget(self.embedding_model_combobox)
+        layout.addWidget(self.embedding_model_browse)
+        layout.addWidget(self.asr_mode_label)
+        layout.addWidget(self.asr_mode_combobox)
+        layout.addWidget(self.language_label)
+        layout.addWidget(self.language_combobox)
+        layout.addWidget(self.confirm_button)
+        self.setCentralWidget(main_widget)
+
+    def on_confirm(self):
+        asr_model_name = self.asr_model_combobox.currentText()
+        embedding_model_name = self.embedding_model_combobox.currentText()
+        asr_mode = self.asr_mode_combobox.currentText()
+        language = self.language_combobox.currentText()
+        log(f"Configuration confirmed: ASR Model: {asr_model_name}, Embedding Model: {embedding_model_name}, ASR Mode: {asr_mode}, Language: {language}", level="DEBUG")
+        self.config = {
+            "asr_model_name": asr_model_name,
+            "embedding_model_name": embedding_model_name,
+            "asr_mode": asr_mode,
+            "language": language
+        }
+        self.close()
+        window = MainWindow(self.theme, self.config)
+        window.show()
+
+    def select_directory(self):
+        selected_dir = QFileDialog.getExistingDirectory(
+            parent=self, 
+            caption="Select a Folder", 
+            dir="", 
+            options=QFileDialog.Option.ShowDirsOnly
+        )
+        
+        if selected_dir:
+            self.embedding_model_combobox.addItem(selected_dir)
+            self.embedding_model_combobox.setCurrentText(selected_dir)
+class MainWindow(QMainWindow):
+    def __init__(self, theme="light", config=DEFAULT_CONFIG):
+        super().__init__()
+        self.theme = theme
+        self.config = config
+
         self.record_thread = None
         self.audio_processor = None
         self.is_recording = False
@@ -28,7 +120,15 @@ class Window(QMainWindow):
         self.setup_ui()
 
     def load_audio_processor(self):
-        self.audio_processor = AudioProcessor(asr_model_name="tiny", gui=True, event_logger=True)
+        if self.audio_processor is None:
+            self.audio_processor = AudioProcessor(
+                asr_model_name=self.config["asr_model_name"],
+                embedding_model_name=self.config["embedding_model_name"],
+                asr_mode=self.config["asr_mode"],
+                language=self.config["language"],
+                gui=True, 
+                event_logger=True
+            )
         self.audio_processor.load_asr_model()
         self.audio_processor.load_embedding_model()
 
@@ -190,6 +290,6 @@ class Window(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     theme = "dark" if app.styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
-    window = Window(theme)
-    window.show()
+    config_window = ConfigWindow(theme)
+    config_window.show()
     sys.exit(app.exec())
