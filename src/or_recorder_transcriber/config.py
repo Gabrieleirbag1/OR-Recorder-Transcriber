@@ -3,7 +3,7 @@ import json
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import CONFIG_PATH
 from or_recorder_transcriber.main_window import MainWindow
-from PySide6.QtWidgets import QComboBox, QFileDialog, QMainWindow, QWidget, QPushButton, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QComboBox, QFileDialog, QGridLayout, QMainWindow, QWidget, QPushButton, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 
 class ConfigWindow(QMainWindow):
@@ -18,7 +18,6 @@ class ConfigWindow(QMainWindow):
 
     def setup(self):
         self.setWindowTitle("Configuration")
-        self.setFixedSize(380, 300)
         self.setup_ui()
 
     def setup_ui(self):
@@ -26,17 +25,14 @@ class ConfigWindow(QMainWindow):
         main_widget = QWidget()
         main_widget.setLayout(layout)
 
+        self.up_layout = QGridLayout()
+        self.up_widget = QWidget()
+        self.up_widget.setLayout(self.up_layout)
+
         self.asr_model_label = QLabel("ASR Model:")
         self.asr_model_combobox = QComboBox()
         self.asr_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.asr_model_combobox.addItems(["tiny", "base", "small", "medium", "large"])
-
-        self.embedding_model_label = QLabel("Embedding Model:")
-        self.embedding_model_combobox = QComboBox()
-        self.embedding_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.embedding_model_combobox.addItems(["paraphrase-multilingual-mpnet-base-v2"])
-        self.embedding_model_browse = QPushButton("Select Embedding Model Directory")
-        self.embedding_model_browse.clicked.connect(self.select_directory)
 
         self.asr_mode_label = QLabel("ASR Mode:")
         self.asr_mode_combobox = QComboBox()
@@ -47,19 +43,28 @@ class ConfigWindow(QMainWindow):
         self.language_combobox = QComboBox()
         self.language_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.language_combobox.addItems(["fr", "en", "es", "de", "it", "pt", "nl", "ru", "zh"])
+        
+        self.embedding_model_label = QLabel("Embedding Model:")
+        self.embedding_model_combobox = QComboBox()
+        self.embedding_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.embedding_model_combobox.addItems(["paraphrase-multilingual-mpnet-base-v2"])
+        self.embedding_model_browse = QPushButton("Select Embedding Model Directory")
+        self.embedding_model_browse.clicked.connect(self.select_directory)
 
         self.confirm_button = QPushButton("Confirm")
         self.confirm_button.clicked.connect(self.on_confirm)
 
-        layout.addWidget(self.asr_model_label)
-        layout.addWidget(self.asr_model_combobox)
-        layout.addWidget(self.embedding_model_label)
+        self.up_layout.addWidget(self.asr_model_label, 0, 0)
+        self.up_layout.addWidget(self.asr_model_combobox, 0, 1)
+        self.up_layout.addWidget(self.asr_mode_label, 1, 0)
+        self.up_layout.addWidget(self.asr_mode_combobox, 1, 1)
+        self.up_layout.addWidget(self.language_label, 2, 0)
+        self.up_layout.addWidget(self.language_combobox, 2, 1)
+
+        layout.addWidget(self.up_widget)
+        layout.addWidget(self.embedding_model_label, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.embedding_model_combobox)
         layout.addWidget(self.embedding_model_browse)
-        layout.addWidget(self.asr_mode_label)
-        layout.addWidget(self.asr_mode_combobox)
-        layout.addWidget(self.language_label)
-        layout.addWidget(self.language_combobox)
         layout.addWidget(self.confirm_button)
         self.setCentralWidget(main_widget)
 
