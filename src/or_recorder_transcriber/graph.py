@@ -5,9 +5,10 @@ import pandas as pd
 from or_recorder_transcriber.utils import FIGURES_DIR
 from lite_logging.lite_logging import log
 
-class GraphGenerator:
-    def __init__(self, file_path: str = None):
+class GraphGenerator():
+    def __init__(self, file_path: str = None, filename: str = None):
         self.file_path = file_path
+        self.filename = filename.split(".")[0] 
 
         self.df = None
 
@@ -129,7 +130,7 @@ class GraphGenerator:
         :rtype: str
         """
         safe_name = re.sub(r"[^\w\-]", "_", str(ev_type))
-        out_path = os.path.join(FIGURES_DIR, f"events_{safe_name}.png")
+        out_path = os.path.join(FIGURES_DIR, f"{self.filename}_{safe_name}.png")
         fig.savefig(out_path, dpi=150)
         plt.close(fig)
         return out_path

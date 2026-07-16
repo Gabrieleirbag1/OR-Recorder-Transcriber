@@ -1,7 +1,6 @@
 import json
 import os
 import re
-
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, THRESHOLD
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
@@ -125,7 +124,7 @@ class AudioProcessor:
             self.event_logger.append_to_csv_file(
                 event=result["event_raw"],
                 dose=dose,
-                event_type="N/A",
+                event_type="test",
                 selected_label=result["top_k"][0]["label"],
                 score=result["top_k"][0]["score"],
                 corrected_label=corrected_label

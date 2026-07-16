@@ -15,13 +15,14 @@ class EventLoggerCSV:
         self.output_dir = output_dir
 
         self.file_path = None
+        self.file_path = None
         self.create_csv_file()
 
     def create_csv_file(self):
         """Create a new CSV file with a timestamped filename and write the header row."""
         # filename must have been this format YYYY-MM-DD HHMM_ExcelData.csv
-        filename = datetime.datetime.now().strftime("%Y-%m-%d %H%M_ExcelData.csv")
-        self.file_path = os.path.join(self.output_dir, filename)
+        self.filename = datetime.datetime.now().strftime("%Y-%m-%d %H%M_ExcelData.csv")
+        self.file_path = os.path.join(self.output_dir, self.filename)
         with open(self.file_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['Abs Time Vector', 'Relative Time', 'Events', 'Dose', 'Event Type', 'Selected Label', 'Score', 'Corrected label'])
@@ -57,5 +58,5 @@ class EventLoggerCSV:
 
     def generate_graphs(self):
         """Generate graphs for each unique Event Type in the CSV file."""
-        graph_generator = GraphGenerator(self.file_path)
+        graph_generator = GraphGenerator(self.file_path, self.filename)
         graph_generator.generate_graph()
