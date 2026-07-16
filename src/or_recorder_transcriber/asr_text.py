@@ -193,3 +193,8 @@ class AudioProcessor:
 
         self.best_event = self.handle_label_selection(self.classification_results)
         return self.best_event
+
+    def generate_graphs(self):
+        """Generate graphs for each unique Event Type in the CSV file if the event logger is enabled."""
+        if self.event_logger:
+            self.event_logger.generate_graphs()

@@ -1,11 +1,8 @@
-#2026-03-09 1009_ExcelData
-#Abs Time Vector	    Relative Time	Events                        Dose      Type                    Label selected  Score   Corrected label
-#23-Oct-2023 11:03:14   0               pr 0.05 @23-10-2023 11:03:14  0.05      médication/op events    PP              0.999   NoneP       
-
 import csv
 import os
 import datetime
 from or_recorder_transcriber.utils import DATA_DIR
+from or_recorder_transcriber.graph import GraphGenerator
 
 class EventLoggerCSV:
     """A class to log events to a CSV file with absolute and relative timestamps.
@@ -57,3 +54,8 @@ class EventLoggerCSV:
         with open(self.file_path, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow([abs_time_vector, relative_time, event, dose, event_type, selected_label, score, corrected_label])
+
+    def generate_graphs(self):
+        """Generate graphs for each unique Event Type in the CSV file."""
+        graph_generator = GraphGenerator(self.file_path)
+        graph_generator.generate_graph()

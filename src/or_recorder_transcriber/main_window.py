@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap, QFont
+from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR
 from or_recorder_transcriber.recorder import RecordThread
@@ -247,3 +247,8 @@ class MainWindow(QMainWindow):
         :param error_message str: The error message describing the failure.
         """
         self.status_label.setText(f"Recording failed : {error_message}")
+
+    def closeEvent(self, event: QCloseEvent):
+        """Handle the event when the main window is closed, ensuring that any ongoing recording is stopped and graphs are generated if applicable."""
+        self.audio_processor.generate_graphs()
+        event.accept()
