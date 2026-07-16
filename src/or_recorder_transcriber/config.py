@@ -4,13 +4,16 @@ from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import CONFIG_PATH
 from or_recorder_transcriber.main_window import MainWindow
 from PySide6.QtWidgets import QComboBox, QFileDialog, QGridLayout, QMainWindow, QWidget, QPushButton, QVBoxLayout, QLabel
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 class ConfigWindow(QMainWindow):
-    def __init__(self, theme="light", config=None):
+    closed = Signal()
+
+    def __init__(self, theme="light", config=None, on_save_close=False):
         super().__init__()
         self.theme = theme
         self.config = config
+        self.on_save_close = on_save_close
 
         self.main_window = None
         
@@ -33,21 +36,27 @@ class ConfigWindow(QMainWindow):
         self.asr_model_combobox = QComboBox()
         self.asr_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.asr_model_combobox.addItems(["tiny", "base", "small", "medium", "large"])
+        self.asr_model_combobox.setCurrentText(self.config.get("asr_model_name", "tiny"))
 
         self.asr_mode_label = QLabel("ASR Mode:")
         self.asr_mode_combobox = QComboBox()
         self.asr_mode_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.asr_mode_combobox.addItems(["faster_whisper", "whisper", "pywhispercpp"])
+        self.asr_mode_combobox.setCurrentText(self.config.get("asr_mode", "faster_whisper"))
 
         self.language_label = QLabel("Language:")
         self.language_combobox = QComboBox()
         self.language_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.language_combobox.addItems(["fr", "en", "es", "de", "it", "pt", "nl", "ru", "zh"])
+        self.language_combobox.setCurrentText(self.config.get("language", "fr"))
         
         self.embedding_model_label = QLabel("Embedding Model:")
         self.embedding_model_combobox = QComboBox()
         self.embedding_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.embedding_model_combobox.addItems(["paraphrase-multilingual-mpnet-base-v2"])
+        if self.config.get("embedding_model_name") and self.config.get("embedding_model_name") not in ["paraphrase-multilingual-mpnet-base-v2"]:
+            self.embedding_model_combobox.addItem(self.config.get("embedding_model_name").split("/")[-1])
+        self.embedding_model_combobox.setCurrentText(self.config.get("embedding_model_name", "paraphrase-multilingual-mpnet-base-v2"))
         self.embedding_model_browse = QPushButton("Select Embedding Model Directory")
         self.embedding_model_browse.clicked.connect(self.select_directory)
 
@@ -82,6 +91,7 @@ class ConfigWindow(QMainWindow):
         }
         ConfigManager.update_config(self.config)
         self.close()
+        self.closed.emit()
         self.main_window = ConfigManager.load_window(MainWindow, self.theme, self.config)
 
     def select_directory(self):
@@ -129,13 +139,3 @@ class ConfigManager:
         window_instance = ConfigWindow(theme, config) if window == ConfigWindow else MainWindow(config, theme)
         window_instance.show()
         return window_instance
-
-if __name__ == "__main__":
-    from PySide6.QtWidgets import QApplication
-    import sys
-
-    app = QApplication(sys.argv)
-    theme = "dark" if app.styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
-    config_window = ConfigWindow(theme)
-    config_window.show()
-    sys.exit(app.exec())

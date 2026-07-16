@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import QApplication, QComboBox, QFileDialog, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR, CONFIG_PATH
+from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor
 import os
@@ -60,14 +60,24 @@ class MainWindow(QMainWindow):
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
 
+        self.settings_button = QPushButton("Settings")
+        self.settings_button.clicked.connect(self.open_settings_window)
+
         self.setup_recorder_ui()
         self.setup_label_selection_ui()
 
+        self.main_layout.addWidget(self.settings_button, alignment=Qt.AlignmentFlag.AlignRight)
         self.main_layout.addWidget(self.recorder_widget)
         self.main_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.setCentralWidget(main_widget)
         self.show_ui("recorder")
+
+    def open_settings_window(self):
+        from or_recorder_transcriber.config import ConfigWindow
+        self.config_window = ConfigWindow(self.theme, self.config, True)
+        self.config_window.closed.connect(self.close)
+        self.config_window.show()
 
     def show_ui(self, mode):
         if mode == "recorder":
