@@ -249,6 +249,9 @@ class MainWindow(QMainWindow):
         self.status_label.setText(f"Recording failed : {error_message}")
 
     def closeEvent(self, event: QCloseEvent):
-        """Handle the event when the main window is closed, ensuring that any ongoing recording is stopped and graphs are generated if applicable."""
+        """Handle the event when the main window is closed, ensuring that any ongoing recording is stopped and graphs are generated if applicable.
+        
+        :param event QCloseEvent: The close event triggered when the window is closed.
+        """
         self.audio_processor.generate_graphs()
         event.accept()
