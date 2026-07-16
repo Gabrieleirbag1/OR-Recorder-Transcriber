@@ -3,7 +3,7 @@ import os
 import re
 
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR, THRESHOLD
+from or_recorder_transcriber.utils import ASSETS_PATH, THRESHOLD
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
 from or_recorder_transcriber.event_logger import EventLoggerCSV
 
@@ -11,31 +11,43 @@ with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encodi
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
 class AudioProcessor:
+    """Process audio files for automatic speech recognition (ASR) and event classification.
+    
+    :param asr_model_name str: The name of the ASR model to use.
+    :param embedding_model_name str: The name of the embedding model to use for classification.
+    :param asr_mode str: The mode of the ASR model (e.g., "faster_whisper", "pywhispercpp", or "whisper").
+    :param language str: The language for ASR transcription.
+    :param gui bool: Whether the application is running in GUI mode. Defaults to False.
+    :param event_logger bool: Whether to log events to a CSV file. Defaults to False.
+    """
     def __init__(
             self, 
-            asr_model_name="base", 
-            embedding_model_name="paraphrase-multilingual-mpnet-base-v2", 
-            asr_mode="faster_whisper", 
-            language="fr", 
-            gui=False, 
-            event_logger=False
+            asr_model_name: str = "base", 
+            embedding_model_name: str = "paraphrase-multilingual-mpnet-base-v2", 
+            asr_mode: str = "faster_whisper", 
+            language: str = "fr", 
+            gui: bool = False, 
+            event_logger: bool = False
         ):
         self.asr_model_name = asr_model_name
         self.embedding_model_name = embedding_model_name
         self.asr_mode = asr_mode
         self.language = language
         self.gui = gui
-        self.asr_model = None
         self.event_logger = EventLoggerCSV() if event_logger else None
+
+        self.asr_model = None
         self.supervised_clustering = None
         self.classification_results: dict = {}
         self.best_event: dict = {}
 
     def load_models(self):
+        """Load the ASR and embedding models based on the specified parameters."""
         self.load_asr_model()
         self.load_embedding_model()
 
     def load_asr_model(self):
+        """Load the ASR model based on the specified mode and model name."""
         if self.asr_mode == "faster_whisper":
             import faster_whisper
             self.asr_model = faster_whisper.WhisperModel(
@@ -53,11 +65,18 @@ class AudioProcessor:
         log(f"ASR model '{self.asr_model_name}' loaded.")
 
     def load_embedding_model(self):
+        """Load the embedding model for event classification."""
         self.supervised_clustering = SupervisedClustering([self.embedding_model_name])
         self.supervised_clustering.load_models(RAW_LABELS)
         log(f"Embedding model '{self.embedding_model_name}' loaded.")
 
-    def transcribe_audio(self, file_path) -> str:
+    def transcribe_audio(self, file_path: str) -> str:
+        """Transcribe the audio file at the given path using the loaded ASR model.
+        
+        :param file_path str: The path to the audio file to transcribe.
+        
+        :return: The transcribed text from the audio file.
+        :rtype: str"""
         if self.asr_model is None:
             self.load_asr_model()
             
@@ -76,7 +95,13 @@ class AudioProcessor:
             result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT, language="fr")
             return result["text"]
     
-    def process_audio_to_label(self, file_path) -> dict | None:
+    def process_audio_to_label(self, file_path: str) -> dict | None:
+        """Process the audio file to transcribe it and classify the event, returning the classification results.
+        
+        :param file_path str: The path to the audio file to process.
+        
+        :return: The classification results for the processed audio file.
+        :rtype: dict | None"""
         text = self.transcribe_audio(file_path)
         log(f"Transcribed : '{text}'")
 
@@ -87,7 +112,11 @@ class AudioProcessor:
         log("Classification results: " + str(results[0]), level="DEBUG")
         return results[0]
     
-    def log_classification_results(self, result, corrected_label=None):
+    def log_classification_results(self, result: dict, corrected_label: str | None = None):
+        """Log the classification results to the event logger if enabled.
+
+        :param result dict: The classification results to log.
+        :param corrected_label str | None: An optional corrected label for the event. Defaults to None."""
         if self.event_logger:
             text = result["event_raw"] #propofol 0.05 mg 
             dose = re.search(r'(\d+(\.\d+)?)\s*(mg|g|ml|l|units)?', text)
@@ -102,7 +131,14 @@ class AudioProcessor:
                 corrected_label=corrected_label
             )
 
-    def is_label_confident(self, score, threshold=THRESHOLD) -> bool:
+    def is_label_confident(self, score: float, threshold: float = THRESHOLD) -> bool:
+        """Determine if the label is confident based on the score and threshold.
+
+        :param score float: The confidence score of the label.
+        :param threshold float: The threshold for determining label confidence. Defaults to THRESHOLD.
+
+        :return: True if the label is confident, False otherwise.
+        :rtype: bool"""
         if score <= threshold:
             log(f"Score {score:.2f} is below the threshold {threshold}. Label is not confident.", level="DEBUG")
             return False
@@ -114,7 +150,13 @@ class AudioProcessor:
                 return False
         return True
 
-    def handle_label_selection(self, result):
+    def handle_label_selection(self, result: dict) -> dict:
+        """Handle the selection of the most appropriate label based on the classification results.
+
+        :param result dict: The classification results containing the top_k labels and their scores.
+        
+        :return: The selected label from the classification results.
+        :rtype: dict"""
         best_score = float(result["best_score"])
         if not self.gui and not self.is_label_confident(best_score):
             print("Please select the most appropriate label from the following options:")
@@ -137,7 +179,13 @@ class AudioProcessor:
             self.log_classification_results(result)
         return result["top_k"][0]
 
-    def evaluate_audio_event(self, file_path):
+    def evaluate_audio_event(self, file_path: str) -> dict | None:
+        """Evaluate the audio file to transcribe it and classify the event, returning the best event label.
+
+        :param file_path str: The path to the audio file to evaluate.
+
+        :return: The best event label from the classification results, or None if classification failed.
+        :rtype: dict | None"""
         self.classification_results = self.process_audio_to_label(file_path)
         if self.classification_results is None:
             log("Unable to classify audio. Please try again.", level="ERROR")

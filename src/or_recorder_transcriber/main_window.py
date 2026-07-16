@@ -12,7 +12,17 @@ with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8
     RAW_LABELS = json.load(f)
 
 class MainWindow(QMainWindow):
-    def __init__(self, config, theme="light"):
+    """Main window for the OR Recorder Transcriber application.
+    
+    :param config dict: Configuration dictionary containing model names and settings.
+    :param theme str: Theme for the application (default is "light").
+    """
+    def __init__(self, config: dict, theme: str = "light"):
+        """Initialize the MainWindow with the given configuration and theme.
+        
+        :param config dict: Configuration dictionary containing model names and settings.
+        :param theme str: Theme for the application (default is "light").
+        """
         super().__init__()
         self.theme = theme
         self.config = config
@@ -25,11 +35,13 @@ class MainWindow(QMainWindow):
         self.setup()
 
     def setup(self):
+        """Set up the main window, including loading the audio processor, setting the window size, and initializing the UI."""
         self.load_audio_processor()
         self.setup_size()
         self.setup_ui()
 
     def load_audio_processor(self):
+        """Load the audio processor with the specified ASR and embedding models."""
         if self.audio_processor is None:
             self.audio_processor = AudioProcessor(
                 asr_model_name=self.config["asr_model_name"],
@@ -43,6 +55,7 @@ class MainWindow(QMainWindow):
         self.audio_processor.load_embedding_model()
 
     def setup_size(self):
+        """Set up the window size based on the screen size and theme."""
         self.setMaximumSize(960, 640)
         ## check screen size and set window size accordingly
         screen = QApplication.primaryScreen()
@@ -56,6 +69,7 @@ class MainWindow(QMainWindow):
             self.setFont(QFont("Arial", 16))
 
     def setup_ui(self):
+        """Set up the user interface, including the main layout, settings button, recorder UI, and label selection UI."""
         self.main_layout = QVBoxLayout()
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
@@ -79,12 +93,17 @@ class MainWindow(QMainWindow):
         self.show_ui("recorder")
 
     def open_settings_window(self):
+        """Open the settings window for configuring ASR and embedding models."""
         from or_recorder_transcriber.config import ConfigWindow
         self.config_window = ConfigWindow(self.theme, self.config, True)
         self.config_window.closed.connect(self.deleteLater)
         self.config_window.show()
 
-    def show_ui(self, mode):
+    def show_ui(self, mode: str):
+        """Show the specified UI mode (recorder or label selection).
+        
+        :param mode str: The mode to show ("recorder" or "label_selection").
+        """
         if mode == "recorder":
             self.recorder_widget.show()
             self.label_selection_widget.hide()
@@ -95,6 +114,7 @@ class MainWindow(QMainWindow):
             raise ValueError(f"Mode inconnu : {mode!r} (attendu : 'recorder' ou 'label_selection')")
 
     def setup_recorder_ui(self):
+        """Set up the recorder user interface, including the record button and status label."""
         self.recorder_widget = QWidget()
         self.recorder_layout = QVBoxLayout()
         self.recorder_widget.setLayout(self.recorder_layout)
@@ -116,6 +136,7 @@ class MainWindow(QMainWindow):
         self.recorder_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def setup_label_selection_ui(self):
+        """Set up the label selection user interface, including buttons for selecting labels and a combobox for additional options."""
         self.label_selection_widget = QWidget()
         self.label_selection_layout = QVBoxLayout()
         self.label_selection_layout.setSpacing(10)
@@ -152,6 +173,10 @@ class MainWindow(QMainWindow):
         self.label_selection_layout.addWidget(self.label_combobox_selection_widget, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def on_label_selected(self, element: QPushButton | QComboBox):
+        """Handle the event when a label is selected, either from a button or a combobox.
+        
+        :param element QPushButton | QComboBox: The element that was used to select the label.
+        """
         if isinstance(element, QPushButton):
             best_label = element.text()
         else:
@@ -164,12 +189,14 @@ class MainWindow(QMainWindow):
         self.show_ui("recorder")
 
     def on_record_clicked(self):
+        """Handle the event when the record button is clicked, toggling between starting and stopping the recording."""
         if not self.is_recording:
             self.start_recording()
         else:
             self.stop_recording()
 
     def start_recording(self):
+        """Start recording audio and update the UI accordingly."""
         self.is_recording = True
         self.record_button.setIcon(self.stop_icon)
         self.status_label.setText("Recording...")
@@ -181,6 +208,7 @@ class MainWindow(QMainWindow):
         self.record_thread.start()
 
     def stop_recording(self):
+        """Stop recording audio and update the UI accordingly."""
         self.is_recording = False
         self.record_button.setIcon(self.mic_icon)
         self.record_button.setStyleSheet("")
@@ -188,7 +216,11 @@ class MainWindow(QMainWindow):
         if self.record_thread is not None:
             self.record_thread.stop()
 
-    def on_recording_finished(self, file_path):
+    def on_recording_finished(self, file_path: str) -> None:
+        """Handle the event when recording is finished, processing the audio and updating the UI.
+
+        :param file_path str: The path to the recorded audio file.
+        """
         self.status_label.setText(f"Saved : {file_path}")
 
         file_path = os.path.join(os.path.dirname(__file__), AUDIO_DIR, "output_copy.wav")
@@ -209,5 +241,9 @@ class MainWindow(QMainWindow):
 
         self.show_ui("label_selection")
 
-    def on_recording_failed(self, error_message):
+    def on_recording_failed(self, error_message: str):
+        """Handle the event when recording fails, updating the UI with an error message.
+
+        :param error_message str: The error message describing the failure.
+        """
         self.status_label.setText(f"Recording failed : {error_message}")

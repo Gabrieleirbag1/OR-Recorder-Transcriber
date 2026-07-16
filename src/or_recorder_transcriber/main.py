@@ -7,6 +7,7 @@ from or_recorder_transcriber.asr_text import AudioProcessor
 from or_recorder_transcriber.utils import AUDIO_DIR
 
 def cli():
+    """Run the application in command-line interface mode."""
     audio_processor = AudioProcessor(event_logger=True)
     audio_processor.load_models()
 
@@ -23,10 +24,12 @@ def cli():
         log(f"Classification results: {result}")
 
 def gui():
+    """Run the application in graphical user interface mode."""
     from or_recorder_transcriber.gui import main as gui_main
     gui_main()
 
 def main():
+    """Main entry point for the application."""
     parser = argparse.ArgumentParser(description="Fine-tune a SetFit model on a training dataset")
     parser.add_argument('--cli', "-c", action='store_true', help='Run in command-line interface mode')
     args = parser.parse_args()

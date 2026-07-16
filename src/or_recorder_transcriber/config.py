@@ -7,9 +7,20 @@ from PySide6.QtWidgets import QComboBox, QFileDialog, QGridLayout, QMainWindow, 
 from PySide6.QtCore import Qt, Signal
 
 class ConfigWindow(QMainWindow):
+    """A window for configuring application settings such as ASR model, embedding model, and language.
+    
+    :param theme str: The theme of the window (light or dark).
+    :param config dict: The current configuration settings.
+    :param on_save_close bool: Whether to close the window after saving the configuration.
+    """
     closed = Signal()
 
-    def __init__(self, theme="light", config=None, on_save_close=False):
+    def __init__(self, theme: str = "light", config: dict[str, str] = None, on_save_close: bool = False):
+        """Initialize the ConfigWindow with the given theme and configuration.
+        
+        :param theme str: The theme of the window (light or dark).
+        :param config dict: The current configuration settings.
+        :param on_save_close bool: Whether to close the window after saving the configuration."""
         super().__init__()
         self.theme = theme
         self.config = config
@@ -20,10 +31,12 @@ class ConfigWindow(QMainWindow):
         self.setup()
 
     def setup(self):
+        """Set up the configuration window UI."""
         self.setWindowTitle("Configuration")
         self.setup_ui()
 
     def setup_ui(self):
+        """Set up the user interface elements for the configuration window."""
         layout = QVBoxLayout()
         main_widget = QWidget()
         main_widget.setLayout(layout)
@@ -79,6 +92,7 @@ class ConfigWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
     def on_confirm(self):
+        """Handle the event when the confirm button is clicked, saving the configuration and reloading the main window."""
         asr_model_name = self.asr_model_combobox.currentText()
         embedding_model_name = self.embedding_model_combobox.currentText()
         asr_mode = self.asr_mode_combobox.currentText()
@@ -96,6 +110,7 @@ class ConfigWindow(QMainWindow):
         self.main_window = ConfigManager.load_window(MainWindow, self.theme, self.config)
 
     def select_directory(self):
+        """Open a dialog to select a directory for the embedding model and update the combobox."""
         selected_dir = QFileDialog.getExistingDirectory(
             parent=self, 
             caption="Select a Folder", 
@@ -108,15 +123,23 @@ class ConfigWindow(QMainWindow):
             self.embedding_model_combobox.setCurrentText(selected_dir)
 
 class ConfigManager:
-    def __init__(self, theme):
-        self.config = None
+    """Manage the configuration settings for the application, including loading and saving configurations.
+    
+    :param theme str: The theme of the application (light or dark).
+    """
+    def __init__(self, theme: str = "light"):
+        """Initialize the ConfigManager with the given theme.
+        
+        :param theme str: The theme of the application (light or dark)."""
         self.theme = theme
 
+        self.config = None
         self.window = None
 
         self.__load_config()
 
     def __load_config(self):
+        """Load the configuration from the config.json file, or fall back to default_config.json if necessary."""
         try:
             with open(os.path.join(CONFIG_PATH, "config.json"), "r", encoding="utf-8") as f:
                 self.config = json.load(f)
@@ -130,13 +153,25 @@ class ConfigManager:
             self.window = self.load_window(ConfigWindow, self.theme, self.config)
 
     @staticmethod
-    def update_config(new_config):
+    def update_config(new_config: dict[str, str]):
+        """Update the configuration settings and save them to the config.json file.
+
+        :param new_config dict: The new configuration settings to be saved."""
         with open(os.path.join(CONFIG_PATH, "config.json"), "w", encoding="utf-8") as f:
             json.dump(new_config, f, indent=4)
         log("Configuration updated and saved to 'config.json'.", level="DEBUG")
 
     @staticmethod
-    def load_window(window: MainWindow | ConfigWindow, theme, config):
+    def load_window(window: MainWindow | ConfigWindow, theme: str, config: dict[str, str]) -> MainWindow | ConfigWindow:
+        """Load the specified window (MainWindow or ConfigWindow) with the given theme and configuration.
+
+        :param window MainWindow | ConfigWindow: The window class to be loaded.
+        :param theme str: The theme of the window (light or dark).
+        :param config dict: The configuration settings to be passed to the window.
+        
+        :return: An instance of the specified window class.
+        :rtype: MainWindow | ConfigWindow
+        """
         window_instance = ConfigWindow(theme, config) if window == ConfigWindow else MainWindow(config, theme)
         window_instance.show()
         return window_instance

@@ -15,21 +15,41 @@ import soundfile as sf
 from PySide6.QtCore import QThread, Signal
 
 class RecordThread(QThread):
+    """Thread for recording audio using sounddevice.
+    
+    :param samplerate int: The sample rate for recording.
+    :param filename string: The name of the output file.
+    :param parent object: The parent widget.
+    """
     finished_recording = Signal(str)
     recording_failed = Signal(str)
 
-    def __init__(self, samplerate=16000, filename="output.wav", parent=None):
+    def __init__(self, samplerate: int = 16000, filename: str = "output.wav", parent: object = None):
+        """Initialize the RecordThread with the given parameters.
+        
+        :param samplerate int: The sample rate for recording.
+        :param filename string: The name of the output file.
+        :param parent object: The parent widget.
+        """
         super().__init__(parent)
         self.samplerate = samplerate
         self.filename = filename
         self._stop_event = threading.Event()
 
-    def run(self):
+    def run(self) -> None:
+        """Start recording audio until the stop event is set."""
         self._stop_event.clear()
 
         q = queue.Queue()
 
-        def callback(indata, frames, time, status):
+        def callback(indata: np.ndarray, frames: int, time: float, status: str):
+            """Handle the audio input stream callback. Put the audio data into the queue.
+            
+            :param indata: The recorded audio data.
+            :param frames: The number of frames recorded.
+            :param time: The time information for the callback.
+            :param status: The status of the audio input stream.
+            """
             if status:
                 log(f"Sounddevice status: {status}")
             q.put(indata.copy())
@@ -67,24 +87,48 @@ class RecordThread(QThread):
         self.finished_recording.emit(output_path)
 
     def stop(self):
+        """Stop the recording."""
         if self._stop_event is not None:
             self._stop_event.set()
 
-def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
-    """Enregistre tant que la touche est maintenue (simule une pédale)."""
+def record_until_key_release(samplerate: int = 16000, trigger_key: keyboard.Key = keyboard.Key.space) -> tuple[np.ndarray, int]:
+    """Record audio until the specified trigger key is released.
+    
+    :param samplerate int: The sample rate for recording.
+    :param trigger_key keyboard.Key: The key that triggers the recording.
+
+    :return: A tuple containing the recorded audio data and the sample rate.
+    :rtype: tuple[np.ndarray, int]
+    """
     q = queue.Queue()
     key_pressed = threading.Event()
     key_released_after_press = threading.Event()
 
-    def callback(indata, frames, time, status):
+    def callback(indata: np.ndarray, frames: int, time: float, status: str):
+        """Handle the audio input stream callback. If the trigger key is pressed, put the audio data into the queue.
+        
+        :param indata np.ndarray: The recorded audio data.
+        :param frames int: The number of frames recorded.
+        :param time float: The time information for the callback.
+        :param status str: The status of the audio input stream."""
         if key_pressed.is_set():
             q.put(indata.copy())
 
-    def on_press(key):
+    def on_press(key: keyboard.Key):
+        """Handle the key press event. If the trigger key is pressed, set the key_pressed event.
+        
+        :param key keyboard.Key: The key that was pressed."""
         if key == trigger_key:
             key_pressed.set()
 
-    def on_release(key):
+    def on_release(key: keyboard.Key) -> bool:
+        """Handle the key release event. If the trigger key is released, stop the listener.
+        
+        :param key keyboard.Key: The key that was released.
+        
+        :return: False to stop the listener if the trigger key is released, True otherwise.
+        :rtype: bool
+        """
         if key == trigger_key:
             key_pressed.clear()
             key_released_after_press.set()
@@ -114,10 +158,3 @@ def record_until_key_release(samplerate=16000, trigger_key=keyboard.Key.space):
 
     audio = np.concatenate(frames, axis=0).flatten()
     return audio, samplerate
-
-if __name__ == "__main__":
-    audio, sr = record_until_key_release()
-    log(f"Recording ended. Duration: {len(audio) / sr:.2f} seconds.")
-    # save the file 
-    sf.write(os.path.join(AUDIO_DIR, "output.wav"), audio, sr)
-    log("File 'output.wav' saved.", level="DEBUG")
