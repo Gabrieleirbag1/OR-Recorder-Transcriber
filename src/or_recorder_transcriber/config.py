@@ -60,7 +60,8 @@ class ConfigWindow(QMainWindow):
         self.embedding_model_browse = QPushButton("Select Embedding Model Directory")
         self.embedding_model_browse.clicked.connect(self.select_directory)
 
-        self.confirm_button = QPushButton("Confirm")
+        self.confirm_button = QPushButton("Save" if not self.on_save_close else "Save and Reload Application")
+        self.confirm_button.setStyleSheet("QPushButton { margin-top: 12px; }")
         self.confirm_button.clicked.connect(self.on_confirm)
 
         self.up_layout.addWidget(self.asr_model_label, 0, 0)

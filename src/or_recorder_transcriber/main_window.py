@@ -60,7 +60,12 @@ class MainWindow(QMainWindow):
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
 
-        self.settings_button = QPushButton("Settings")
+        settings_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"settings_{self.theme}.svg"))
+        self.settings_icon = QIcon(settings_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        self.settings_button = QPushButton()
+        self.settings_button.setFixedSize(40, 40)
+        self.settings_button.setIcon(self.settings_icon)
+        self.settings_button.setIconSize(settings_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation).size())
         self.settings_button.clicked.connect(self.open_settings_window)
 
         self.setup_recorder_ui()
