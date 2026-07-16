@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
     def open_settings_window(self):
         from or_recorder_transcriber.config import ConfigWindow
         self.config_window = ConfigWindow(self.theme, self.config, True)
-        self.config_window.closed.connect(self.close)
+        self.config_window.closed.connect(self.deleteLater)
         self.config_window.show()
 
     def show_ui(self, mode):
