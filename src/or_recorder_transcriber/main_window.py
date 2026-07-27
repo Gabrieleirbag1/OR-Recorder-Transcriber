@@ -61,8 +61,7 @@ class MainWindow(QMainWindow):
         screen = QApplication.primaryScreen()
         screen_size = screen.size()
         if screen_size.width() < 960 or screen_size.height() < 640:
-            self.setMaximumSize(screen_size.width(), screen_size.height())
-            self.setFixedSize(screen_size.width(), screen_size.height() - 100)
+            self.showFullScreen()
             self.setFont(QFont("Arial", 12))
         else:
             self.resize(960, 640)
