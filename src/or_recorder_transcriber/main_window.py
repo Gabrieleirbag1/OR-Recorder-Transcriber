@@ -112,6 +112,10 @@ class MainWindow(QMainWindow):
         self.header_layout = QHBoxLayout()
         self.header_widget.setLayout(self.header_layout)
 
+        self.reset_relative_time_button = QPushButton("Reset Relative Time")
+        self.reset_relative_time_button.setFixedHeight(40)
+        self.reset_relative_time_button.clicked.connect(self.show_relative_time_dialog)
+
         settings_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"settings_{self.theme}.svg"))
         self.settings_icon = QIcon(settings_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         self.settings_button = QPushButton()
@@ -128,6 +132,7 @@ class MainWindow(QMainWindow):
         self.close_window_button.setIconSize(close_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation).size())
         self.close_window_button.clicked.connect(lambda: self.show_close_window_dialog())
 
+        self.header_layout.addWidget(self.reset_relative_time_button)
         self.header_layout.addWidget(self.settings_button)
         self.header_layout.addWidget(self.close_window_button)
 
@@ -136,6 +141,15 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(self, "Close Window", "Are you sure you want to close the window?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             self.close()
+
+    def show_relative_time_dialog(self):
+        """Show a dialog displaying the relative time since the first event was logged."""
+        if self.audio_processor is not None and self.audio_processor.event_logger is not None:
+            reply = QMessageBox.question(self, "Relative Time", f"Relative time since first event: {self.audio_processor.event_logger.relative_time_counter()} seconds.\n Do you want to reset the relative time?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.Yes:
+                self.audio_processor.event_logger.reset_relative_time()
+        else:
+            QMessageBox.warning(self, "Relative Time", "Event logger is not initialized.")
 
     def setup_recorder_ui(self):
         """Set up the recorder user interface, including the record button and status label."""
