@@ -5,6 +5,7 @@ from or_recorder_transcriber.utils import CONFIG_PATH
 from or_recorder_transcriber.main_window import MainWindow
 from PySide6.QtWidgets import QComboBox, QFileDialog, QGridLayout, QMainWindow, QWidget, QPushButton, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QGuiApplication
 
 class ConfigWindow(QMainWindow):
     """A window for configuring application settings such as ASR model, embedding model, and language.
@@ -34,6 +35,21 @@ class ConfigWindow(QMainWindow):
         """Set up the configuration window UI."""
         self.setWindowTitle("Configuration")
         self.setup_ui()
+        self.center_on_screen()  # Center the window on display
+
+    def center_on_screen(self):
+        """Center the window on the active primary screen."""
+        screen = QGuiApplication.primaryScreen()
+        if not screen:
+            return
+            
+        screen_geometry = screen.availableGeometry()
+        
+        self.adjustSize() 
+        window_geometry = self.frameGeometry()
+        
+        window_geometry.moveCenter(screen_geometry.center())
+        self.move(window_geometry.topLeft())
 
     def setup_ui(self):
         """Set up the user interface elements for the configuration window."""
