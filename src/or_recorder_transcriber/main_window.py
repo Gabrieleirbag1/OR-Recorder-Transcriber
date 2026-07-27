@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
@@ -72,22 +72,17 @@ class MainWindow(QMainWindow):
         self.main_layout = QVBoxLayout()
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
-
-        settings_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"settings_{self.theme}.svg"))
-        self.settings_icon = QIcon(settings_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
-        self.settings_button = QPushButton()
-        self.settings_button.setFixedSize(40, 40)
-        self.settings_button.setIcon(self.settings_icon)
-        self.settings_button.setIconSize(settings_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation).size())
-        self.settings_button.clicked.connect(self.open_settings_window)
-
+        
+        self.setup_header_ui()
         self.setup_recorder_ui()
         self.setup_label_selection_ui()
 
-        self.main_layout.addWidget(self.settings_button, alignment=Qt.AlignmentFlag.AlignRight)
+        self.main_layout.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignRight)
+        self.main_layout.addStretch(1)
         self.main_layout.addWidget(self.recorder_widget)
-        self.main_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignCenter)
-
+        self.main_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.main_layout.addStretch(1)
+        
         self.setCentralWidget(main_widget)
         self.show_ui("recorder")
 
@@ -111,6 +106,36 @@ class MainWindow(QMainWindow):
             self.label_selection_widget.show()
         else:
             raise ValueError(f"Mode inconnu : {mode!r} (attendu : 'recorder' ou 'label_selection')")
+
+    def setup_header_ui(self):
+        self.header_widget = QWidget()
+        self.header_layout = QHBoxLayout()
+        self.header_widget.setLayout(self.header_layout)
+
+        settings_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"settings_{self.theme}.svg"))
+        self.settings_icon = QIcon(settings_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        self.settings_button = QPushButton()
+        self.settings_button.setFixedSize(40, 40)
+        self.settings_button.setIcon(self.settings_icon)
+        self.settings_button.setIconSize(settings_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation).size())
+        self.settings_button.clicked.connect(self.open_settings_window)
+
+        close_pixmap = QPixmap(os.path.join(ASSETS_PATH, "images", f"close_{self.theme}.svg"))
+        self.close_icon = QIcon(close_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        self.close_window_button = QPushButton()
+        self.close_window_button.setFixedSize(40, 40)
+        self.close_window_button.setIcon(self.close_icon)
+        self.close_window_button.setIconSize(close_pixmap.scaled(30, 30, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation).size())
+        self.close_window_button.clicked.connect(lambda: self.show_close_window_dialog())
+
+        self.header_layout.addWidget(self.settings_button)
+        self.header_layout.addWidget(self.close_window_button)
+
+    def show_close_window_dialog(self):
+        """Show a confirmation dialog when the user attempts to close the window."""
+        reply = QMessageBox.question(self, "Close Window", "Are you sure you want to close the window?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            self.close()
 
     def setup_recorder_ui(self):
         """Set up the recorder user interface, including the record button and status label."""
