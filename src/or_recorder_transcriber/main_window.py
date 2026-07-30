@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QStackedWidget, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
+from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
@@ -68,38 +68,23 @@ class MainWindow(QMainWindow):
             self.setFont(QFont("Arial", 16))
 
     def setup_ui(self):
-        """Set up the user interface for the main window, including the header, recorder, and label selection UI."""
+        """Set up the user interface, including the main layout, settings button, recorder UI, and label selection UI."""
         self.main_layout = QVBoxLayout()
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
-
+        
         self.setup_header_ui()
         self.setup_recorder_ui()
         self.setup_label_selection_ui()
 
-        self.body_stack = QStackedWidget()
-        self.body_stack.addWidget(self.recorder_widget)
-        self.body_stack.addWidget(self.label_selection_widget)
-
         self.main_layout.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignRight)
         self.main_layout.addStretch(1)
-        self.main_layout.addWidget(self.body_stack)
+        self.main_layout.addWidget(self.recorder_widget)
+        self.main_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.main_layout.addStretch(1)
-
+        
         self.setCentralWidget(main_widget)
         self.show_ui("recorder")
-
-    def show_ui(self, mode: str):
-        """Show the specified UI mode (recorder or label selection).
-        
-        :param mode str: The mode to show ("recorder" or "label_selection").
-        """
-        if mode == "recorder":
-            self.body_stack.setCurrentWidget(self.recorder_widget)
-        elif mode == "label_selection":
-            self.body_stack.setCurrentWidget(self.label_selection_widget)
-        else:
-            raise ValueError(f"Mode inconnu : {mode!r} (attendu : 'recorder' ou 'label_selection')")
 
     def open_settings_window(self):
         """Open the settings window for configuring ASR and embedding models."""
@@ -107,6 +92,21 @@ class MainWindow(QMainWindow):
         self.config_window = ConfigWindow(self.theme, self.config, True)
         self.config_window.closed.connect(self.deleteLater)
         self.config_window.show()
+
+    def show_ui(self, mode: str):
+        """Show the specified UI mode (recorder or label selection)."""
+        if mode == "recorder":
+            self.label_selection_widget.hide()
+            self.recorder_widget.show()
+        elif mode == "label_selection":
+            self.recorder_widget.hide()
+            self.label_selection_widget.show()
+        else:
+            raise ValueError(f"Mode inconnu : {mode!r} (attendu : 'recorder' ou 'label_selection')")
+
+        self.main_layout.activate()
+        self.main_layout.update()
+        self.centralWidget().updateGeometry()
 
     def setup_header_ui(self):
         self.header_widget = QWidget()
@@ -180,6 +180,7 @@ class MainWindow(QMainWindow):
         self.label_selection_layout = QVBoxLayout()
         self.label_selection_layout.setSpacing(10)
         self.label_selection_widget.setLayout(self.label_selection_layout)
+        # self.label_selection_widget.setFixedWidth(self.width() * 0.8)
 
         self.select_label = QLabel("Select the most appropriate label:")
         self.label_selection_layout.addWidget(self.select_label, alignment=Qt.AlignmentFlag.AlignCenter)
