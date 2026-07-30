@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
+from PySide6.QtWidgets import QApplication, QComboBox, QHeaderView, QMainWindow, QTableWidget, QTableWidgetItem, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont
+from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont, QResizeEvent
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR
 from or_recorder_transcriber.recorder import RecordThread
@@ -51,6 +51,7 @@ class MainWindow(QMainWindow):
                 gui=True, 
                 event_logger=True
             )
+        self.audio_processor.event_logger.file_content_update.connect(self.update_session_table)
         self.audio_processor.load_asr_model()
         self.audio_processor.load_embedding_model()
 
@@ -62,25 +63,32 @@ class MainWindow(QMainWindow):
         screen_size = screen.size()
         if screen_size.width() < 960 or screen_size.height() < 640:
             self.showFullScreen()
-            self.setFont(QFont("Arial", 12))
+            self.setFont(QFont("Arial", 10))
         else:
             self.resize(960, 640)
-            self.setFont(QFont("Arial", 16))
+            self.setFont(QFont("Arial", 12))
 
     def setup_ui(self):
         """Set up the user interface, including the main layout, settings button, recorder UI, and label selection UI."""
         self.main_layout = QVBoxLayout()
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
-        
+
+        self.container_layout = QHBoxLayout()
+        container_widget = QWidget()
+        container_widget.setLayout(self.container_layout)
+
         self.setup_header_ui()
+        self.setup_info_ui()
         self.setup_recorder_ui()
         self.setup_label_selection_ui()
 
         self.main_layout.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignRight)
         self.main_layout.addStretch(1)
-        self.main_layout.addWidget(self.recorder_widget)
-        self.main_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.main_layout.addWidget(container_widget)
+        self.container_layout.addWidget(self.info_widget, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.container_layout.addWidget(self.recorder_widget)
+        self.container_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.main_layout.addStretch(1)
         
         self.setCentralWidget(main_widget)
@@ -108,7 +116,62 @@ class MainWindow(QMainWindow):
         self.main_layout.update()
         self.centralWidget().updateGeometry()
 
+    def setup_info_ui(self):
+        """Set up the information user interface, including labels for displaying status and results."""
+        self.info_widget = QWidget()
+        self.info_layout = QVBoxLayout()
+        self.info_widget.setLayout(self.info_layout)
+
+        self.transcription_label = QLabel("No transcription yet.")
+        self.session_table = QTableWidget()
+        header = self.session_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        headerH = ['Events', 'Dose', 'Label']
+        self.session_table.setRowCount(5)
+        self.session_table.setColumnCount(3)
+        self.session_table.setHorizontalHeaderLabels(headerH)
+        
+        self.info_layout.addWidget(self.transcription_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.info_layout.addWidget(self.session_table)
+
+    def update_session_table(self, file_content: dict):
+        """Update the session table with the latest event logger data (perf-optimized: reuses items, disables repaint during the batch update).
+        
+        :param file_content dict: The content of the event logger file, containing event information and timestamps."""
+        events = file_content['Events']
+        self.transcription_label.setText(events[-1] if events else "No events logged yet.")
+
+        row_count = len(file_content['Abs Time Vector'])
+        if self.session_table.rowCount() < row_count:
+            self.session_table.setRowCount(row_count)
+
+        for i in range(row_count):
+            self._set_cell(i, 0, str(file_content['Events'][i]))
+            self._set_cell(i, 1, str(file_content['Dose'][i]))
+
+            corrected = file_content['Corrected Label'][i]
+            label = corrected if corrected is not None else file_content['Selected Label'][i]
+            self._set_cell(i, 2, str(label))
+
+            rel_time_str = str(int(file_content['Relative Time'][i]))
+            header_item = self.session_table.verticalHeaderItem(i)
+            if header_item is None:
+                self.session_table.setVerticalHeaderItem(i, QTableWidgetItem(rel_time_str))
+            else:
+                header_item.setText(rel_time_str)
+
+    def _set_cell(self, row: int, col: int, text: str):
+        """Reuse the existing item if present instead of allocating a new QTableWidgetItem every update."""
+        item = self.session_table.item(row, col)
+        if item is None:
+            self.session_table.setItem(row, col, QTableWidgetItem(text))
+        else:
+            item.setText(text)
+
     def setup_header_ui(self):
+        """Set up the header user interface, including buttons for resetting the session, opening settings, and closing the window."""
         self.header_widget = QWidget()
         self.header_layout = QHBoxLayout()
         self.header_widget.setLayout(self.header_layout)
@@ -292,7 +355,13 @@ class MainWindow(QMainWindow):
         self.audio_processor.generate_graphs()
         event.accept()
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent):
+        """Handle the event when the main window is resized, adjusting the maximum width of the label selection widget and the size of the session table accordingly.
+
+        :param event QResizeEvent: The resize event triggered when the window is resized.
+        """
         super().resizeEvent(event)
         if hasattr(self, "label_selection_widget"):
             self.label_selection_widget.setMaximumWidth(int(self.width() * 0.8))
+        if hasattr(self, "session_table"):
+            self.session_table.setFixedSize(int(self.width() * 0.4), int(self.height() * 0.6))
