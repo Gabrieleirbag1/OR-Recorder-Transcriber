@@ -1,20 +1,25 @@
 import csv
 import os
 import datetime
+from PySide6.QtCore import Signal
+from PySide6.QtCore import QObject
 from or_recorder_transcriber.utils import DATA_DIR
 from or_recorder_transcriber.graph import GraphGenerator
 
-class EventLoggerCSV:
+class EventLoggerCSV(QObject):
     """A class to log events to a CSV file with absolute and relative timestamps.
     
     :param output_dir str: The directory where the CSV file will be saved. Defaults to DATA_DIR."""
+
+    file_content_update = Signal(dict)
     def __init__(self, output_dir: str = DATA_DIR):
         """Initialize the EventLoggerCSV with the specified output directory.
         
         :param output_dir str: The directory where the CSV file will be saved. Defaults to DATA_DIR."""
+        super().__init__()
         self.output_dir = output_dir
 
-        self.file_path = None
+        self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': []}
         self.file_path = None
         self.create_csv_file()
 
@@ -25,7 +30,7 @@ class EventLoggerCSV:
         self.file_path = os.path.join(self.output_dir, self.filename)
         with open(self.file_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Abs Time Vector', 'Relative Time', 'Events', 'Dose', 'Event Type', 'Selected Label', 'Score', 'Corrected label'])
+            writer.writerow(['Abs Time Vector', 'Relative Time', 'Events', 'Dose', 'Event Type', 'Selected Label', 'Score', 'Corrected Label'])
 
     def relative_time_counter(self) -> float:
         """Calculate the relative time in seconds since the first event was logged.
@@ -44,6 +49,7 @@ class EventLoggerCSV:
     def reset_session(self):
         """Reset the session by deleting the start time and creating a new CSV file."""
         delattr(self, 'start_time')
+        self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': []}
         self.create_csv_file()
         
     def append_to_csv_file(self, event: str, dose: float, event_type: str, selected_label: str, score: float, corrected_label: str = None):
@@ -54,12 +60,16 @@ class EventLoggerCSV:
         :param event_type str: The type of event.
         :param selected_label str: The label selected for the event.
         :param score float: The confidence score for the selected label.
-        :param corrected_label str: An optional corrected label for the event. Defaults to None."""
+        :param corrected_label str: An optional Corrected Label for the event. Defaults to None."""
         abs_time_vector = datetime.datetime.now().strftime("%d-%b-%Y %H:%M:%S")
         relative_time = self.relative_time_counter()
+        params = [abs_time_vector, relative_time, event, dose, event_type, selected_label, score, corrected_label]
         with open(self.file_path, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow([abs_time_vector, relative_time, event, dose, event_type, selected_label, score, corrected_label])
+            for i, (key, _) in enumerate(self.file_content.items()):
+                self.file_content[key].append(params[i])
+            self.file_content_update.emit(self.file_content)
 
     def generate_graphs(self):
         """Generate graphs for each unique Event Type in the CSV file."""
