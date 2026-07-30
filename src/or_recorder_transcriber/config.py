@@ -82,12 +82,11 @@ class ConfigWindow(QMainWindow):
         self.embedding_model_label = QLabel("Embedding Model:")
         self.embedding_model_combobox = QComboBox()
         self.embedding_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.embedding_model_combobox.addItems(["paraphrase-multilingual-mpnet-base-v2"])
-        if self.config.get("embedding_model_name") and self.config.get("embedding_model_name") not in ["paraphrase-multilingual-mpnet-base-v2"]:
-            self.embedding_model_combobox.addItem(self.config.get("embedding_model_name").split("/")[-1])
-        self.embedding_model_combobox.setCurrentText(self.config.get("embedding_model_name", "paraphrase-multilingual-mpnet-base-v2"))
+        self.embedding_model_combobox.addItems(["paraphrase-multilingual-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"])
         self.embedding_model_browse = QPushButton("Select Embedding Model Directory")
         self.embedding_model_browse.clicked.connect(self.select_directory)
+        self.list_embedding_models(self.config.get("embedding_model_dir", ""))
+        self.embedding_model_combobox.setCurrentText(self.config.get("embedding_model_name", "paraphrase-multilingual-mpnet-base-v2"))
 
         self.confirm_button = QPushButton("Save" if not self.on_save_close else "Save and Reload Application")
         self.confirm_button.setStyleSheet("QPushButton { margin-top: 12px; }")
@@ -111,12 +110,14 @@ class ConfigWindow(QMainWindow):
         """Handle the event when the confirm button is clicked, saving the configuration and reloading the main window."""
         asr_model_name = self.asr_model_combobox.currentText()
         embedding_model_name = self.embedding_model_combobox.currentText()
+        embedding_model_dir = self.embedding_model_browse.text().replace("Selected: ", "")
         asr_mode = self.asr_mode_combobox.currentText()
         language = self.language_combobox.currentText()
         log(f"Configuration confirmed: ASR Model: {asr_model_name}, Embedding Model: {embedding_model_name}, ASR Mode: {asr_mode}, Language: {language}", level="DEBUG")
         self.config = {
             "asr_model_name": asr_model_name,
             "embedding_model_name": embedding_model_name,
+            "embedding_model_dir": embedding_model_dir,
             "asr_mode": asr_mode,
             "language": language
         }
@@ -124,6 +125,13 @@ class ConfigWindow(QMainWindow):
         self.close()
         self.closed.emit()
         self.main_window = ConfigManager.load_window(MainWindow, self.theme, self.config)
+
+    def list_embedding_models(self, directory: str) -> list[str]:
+        self.embedding_model_browse.setText(f"Selected: {directory}")
+        models = os.listdir(directory)
+        for model in models:
+            self.embedding_model_combobox.addItem(model)
+        return models
 
     def select_directory(self):
         """Open a dialog to select a directory for the embedding model and update the combobox."""
@@ -133,10 +141,10 @@ class ConfigWindow(QMainWindow):
             dir="", 
             options=QFileDialog.Option.ShowDirsOnly
         )
-        
         if selected_dir:
-            self.embedding_model_combobox.addItem(selected_dir)
-            self.embedding_model_combobox.setCurrentText(selected_dir)
+            self.list_embedding_models(selected_dir)
+        
+
 
 class ConfigManager:
     """Manage the configuration settings for the application, including loading and saving configurations.
