@@ -128,11 +128,18 @@ class ConfigWindow(QMainWindow):
 
     def list_embedding_models(self, directory: str) -> list[str]:
         self.embedding_model_browse.setText(f"Selected: {directory}")
-        models = os.listdir(directory)
-        for model in models:
-            self.embedding_model_combobox.addItem(model)
-        return models
-
+        try: 
+            models = os.listdir(directory)
+            for model in models:
+                self.embedding_model_combobox.addItem(model)
+            return models
+        except FileNotFoundError:
+            log(f"Directory not found: {directory}", level="ERROR")
+            return []
+        except PermissionError:
+            log(f"Permission denied to access directory: {directory}", level="ERROR")
+            return []
+        
     def select_directory(self):
         """Open a dialog to select a directory for the embedding model and update the combobox."""
         selected_dir = QFileDialog.getExistingDirectory(
@@ -143,8 +150,6 @@ class ConfigWindow(QMainWindow):
         )
         if selected_dir:
             self.list_embedding_models(selected_dir)
-        
-
 
 class ConfigManager:
     """Manage the configuration settings for the application, including loading and saving configurations.
