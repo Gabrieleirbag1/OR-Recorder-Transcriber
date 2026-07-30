@@ -261,7 +261,6 @@ class MainWindow(QMainWindow):
         :param file_path str: The path to the recorded audio file.
         """
         self.status_label.setText(f"Saved : {file_path}")
-        file_path = os.path.join(os.path.dirname(__file__), AUDIO_DIR, "output_copy.wav")
         best_event = self.audio_processor.evaluate_audio_event(file_path)
         if best_event is None:
             self.status_label.setText(f"Unable to classify audio. Please try again.")
