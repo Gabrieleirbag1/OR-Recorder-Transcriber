@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
         self.header_layout = QHBoxLayout()
         self.header_widget.setLayout(self.header_layout)
 
-        self.reset_relative_time_button = QPushButton("Reset Relative Time")
+        self.reset_relative_time_button = QPushButton("Reset Session")
         self.reset_relative_time_button.setFixedHeight(40)
         self.reset_relative_time_button.clicked.connect(self.show_relative_time_dialog)
 
@@ -145,9 +145,9 @@ class MainWindow(QMainWindow):
     def show_relative_time_dialog(self):
         """Show a dialog displaying the relative time since the first event was logged."""
         if self.audio_processor is not None and self.audio_processor.event_logger is not None:
-            reply = QMessageBox.question(self, "Relative Time", f"Relative time since first event: {self.audio_processor.event_logger.relative_time_counter()} seconds.\n Do you want to reset the relative time?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            reply = QMessageBox.question(self, "Reset Session", f"Relative time since first event: {self.audio_processor.event_logger.relative_time_counter()} seconds.\n Do you want to reset the session?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                self.audio_processor.event_logger.reset_relative_time()
+                self.audio_processor.event_logger.reset_session()
         else:
             QMessageBox.warning(self, "Relative Time", "Event logger is not initialized.")
 

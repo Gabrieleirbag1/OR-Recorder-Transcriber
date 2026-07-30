@@ -41,9 +41,10 @@ class EventLoggerCSV:
             relative_time = round(relative_time, 0)
             return relative_time
         
-    def reset_relative_time(self):
-        """Reset the relative time counter to start from the current time."""
-        self.start_time = datetime.datetime.now()
+    def reset_session(self):
+        """Reset the session by deleting the start time and creating a new CSV file."""
+        delattr(self, 'start_time')
+        self.create_csv_file()
         
     def append_to_csv_file(self, event: str, dose: float, event_type: str, selected_label: str, score: float, corrected_label: str = None):
         """Append a new row to the CSV file with the provided event information.
