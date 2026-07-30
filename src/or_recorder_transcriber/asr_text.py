@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from PySide6.QtCore import QObject
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, THRESHOLD
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
@@ -9,7 +10,7 @@ from or_recorder_transcriber.event_logger import EventLoggerCSV
 with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encoding="utf-8") as f:
     MEDICAL_CONTEXT = ' '.join(json.load(f))
 
-class AudioProcessor:
+class AudioProcessor(QObject):
     """Process audio files for automatic speech recognition (ASR) and event classification.
     
     :param asr_model_name str: The name of the ASR model to use.
@@ -28,6 +29,7 @@ class AudioProcessor:
             gui: bool = False, 
             event_logger: bool = False
         ):
+        super().__init__()
         self.asr_model_name = asr_model_name
         self.embedding_model_name = embedding_model_name
         self.asr_mode = asr_mode
@@ -76,6 +78,7 @@ class AudioProcessor:
         
         :return: The transcribed text from the audio file.
         :rtype: str"""
+        return "procedure propofol 0.05 mg"  # Placeholder for actual transcription logic
         if self.asr_model is None:
             self.load_asr_model()
             
@@ -115,7 +118,7 @@ class AudioProcessor:
         """Log the classification results to the event logger if enabled.
 
         :param result dict: The classification results to log.
-        :param corrected_label str | None: An optional corrected label for the event. Defaults to None."""
+        :param corrected_label str | None: An optional Corrected Label for the event. Defaults to None."""
         if self.event_logger:
             text = result["event_raw"] #propofol 0.05 mg 
             dose = re.search(r'(\d+(\.\d+)?)\s*(mg|g|ml|l|units)?', text)
