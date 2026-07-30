@@ -129,7 +129,7 @@ class ConfigWindow(QMainWindow):
     def list_embedding_models(self, directory: str) -> list[str]:
         self.embedding_model_browse.setText(f"Selected: {directory}")
         try: 
-            models = os.listdir(directory)
+            models = [os.path.join(os.path.abspath(directory), entry) for entry in os.listdir(directory)]
             for model in models:
                 self.embedding_model_combobox.addItem(model)
             return models
