@@ -179,7 +179,12 @@ class MainWindow(QMainWindow):
         self.label_selection_layout = QVBoxLayout()
         self.label_selection_layout.setSpacing(10)
         self.label_selection_widget.setLayout(self.label_selection_layout)
-        self.label_selection_widget.setFixedWidth(self.width() * 0.8)
+        screen = QApplication.primaryScreen()
+        screen_size = screen.size()
+        if screen_size.width() < 960 or screen_size.height() < 640:
+            self.label_selection_widget.setFixedWidth(400)
+        else:
+            self.label_selection_widget.setFixedWidth(self.width() * 0.8)
 
         self.select_label = QLabel("Select the most appropriate label:")
         self.label_selection_layout.addWidget(self.select_label, alignment=Qt.AlignmentFlag.AlignCenter)
