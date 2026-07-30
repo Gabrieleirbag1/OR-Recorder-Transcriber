@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QStackedWidget, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QSizePolicy, QStackedWidget, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR
@@ -56,17 +56,19 @@ class MainWindow(QMainWindow):
 
     def setup_size(self):
         """Set up the window size based on the screen size and theme."""
-        self.setMaximumSize(960, 640)
-        ## check screen size and set window size accordingly
         screen = QApplication.primaryScreen()
         screen_size = screen.size()
-        if screen_size.width() < 960 or screen_size.height() < 640:
-            self.showFullScreen()
-            self.setFont(QFont("Arial", 12))
-        else:
-            self.resize(960, 640)
-            self.setFont(QFont("Arial", 16))
 
+        if screen_size.width() < 960 or screen_size.height() < 640:
+            self.setFont(QFont("Arial", 12))
+            self.showFullScreen()
+            # en fullscreen, on fixe quand même une taille "logique" interne
+            self._fixed_size = screen_size
+        else:
+            self.setFont(QFont("Arial", 16))
+            self._fixed_size = QSize(960, 640)
+            self.setFixedSize(self._fixed_size)  # <-- fixe réellement, plus resize() + maximumSize
+        
     def setup_ui(self):
         """Set up the user interface elements for the main window, including the header, recorder, and label selection UI."""
         self.main_layout = QVBoxLayout()
@@ -80,6 +82,7 @@ class MainWindow(QMainWindow):
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self.recorder_widget)
         self.content_stack.addWidget(self.label_selection_widget)
+        self.content_stack.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.main_layout.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignRight)
         self.main_layout.addWidget(self.content_stack)
@@ -178,12 +181,10 @@ class MainWindow(QMainWindow):
         self.label_selection_layout = QVBoxLayout()
         self.label_selection_layout.setSpacing(10)
         self.label_selection_widget.setLayout(self.label_selection_layout)
-        screen = QApplication.primaryScreen()
-        screen_size = screen.size()
-        if screen_size.width() < 960 or screen_size.height() < 640:
-            self.label_selection_widget.setFixedWidth(400)
-        else:
-            self.label_selection_widget.setFixedWidth(self.width() * 0.8)
+
+        screen_size = QApplication.primaryScreen().size()
+        target_width = int(min(screen_size.width(), 960) * 0.8)
+        self.label_selection_widget.setFixedWidth(target_width)
 
         self.select_label = QLabel("Select the most appropriate label:")
         self.label_selection_layout.addWidget(self.select_label, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -264,7 +265,7 @@ class MainWindow(QMainWindow):
         :param file_path str: The path to the recorded audio file.
         """
         self.status_label.setText(f"Saved : {file_path}")
-
+        file_path = os.path.join(os.path.dirname(__file__), AUDIO_DIR, "output_copy.wav")
         best_event = self.audio_processor.evaluate_audio_event(file_path)
         if best_event is None:
             self.status_label.setText(f"Unable to classify audio. Please try again.")
