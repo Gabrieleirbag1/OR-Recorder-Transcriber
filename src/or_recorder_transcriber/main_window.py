@@ -9,7 +9,8 @@ import os
 import json
 
 with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
-    RAW_LABELS = json.load(f)
+    EVENT_TYPES = json.load(f)
+RAW_LABELS = list(EVENT_TYPES.keys())
 
 class MainWindow(QMainWindow):
     """Main window for the OR Recorder Transcriber application.
@@ -41,13 +42,15 @@ class MainWindow(QMainWindow):
         self.setup_ui()
 
     def load_audio_processor(self):
-        """Load the audio processor with the specified ASR and embedding models."""
+        """Load the audio processor with the specified ASR and embedding models, and the Event Type
+        mapping loaded once from labels.json at module import time."""
         if self.audio_processor is None:
             self.audio_processor = AudioProcessor(
                 asr_model_name=self.config["asr_model_name"],
                 embedding_model_name=self.config["embedding_model_name"],
                 asr_mode=self.config["asr_mode"],
                 language=self.config["language"],
+                event_types=EVENT_TYPES,
                 gui=True, 
                 event_logger=True
             )
@@ -124,11 +127,8 @@ class MainWindow(QMainWindow):
 
         self.transcription_label = QLabel("No transcription yet.")
         self.session_table = QTableWidget()
-        header = self.session_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        headerH = ['Events', 'Dose', 'Label']
+        self.session_table.horizontalHeader().setStretchLastSection(True)
+        headerH = ['Dose', 'Label', 'Events']
         self.session_table.setRowCount(5)
         self.session_table.setColumnCount(3)
         self.session_table.setHorizontalHeaderLabels(headerH)
