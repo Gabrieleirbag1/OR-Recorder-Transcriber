@@ -170,6 +170,7 @@ class MainWindow(QMainWindow):
                     header_item.setText(rel_time_str)
         finally:
             self.session_table.blockSignals(False)
+        self.session_table.scrollToBottom()
 
     def _set_cell(self, row: int, col: int, text: str):
         """Reuse existing item if present instead of allocating a new QTableWidgetItem."""
