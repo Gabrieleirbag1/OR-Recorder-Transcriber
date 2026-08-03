@@ -68,31 +68,34 @@ class MainWindow(QMainWindow):
             self.showFullScreen()
             self.setFont(QFont("Arial", 10))
         else:
-            self.resize(960, 640)
+            self.setFixedSize(960, 640)
             self.setFont(QFont("Arial", 12))
 
     def setup_ui(self):
         """Set up the user interface, including the main layout, settings button, recorder UI, and label selection UI."""
-        self.main_layout = QVBoxLayout()
+        self.main_layout = QHBoxLayout()
         main_widget = QWidget()
         main_widget.setLayout(self.main_layout)
 
-        self.container_layout = QHBoxLayout()
-        container_widget = QWidget()
-        container_widget.setLayout(self.container_layout)
+        self.container_layout = QVBoxLayout()
+        container_widget1 = QWidget()
+        container_widget1.setLayout(self.container_layout)
+
+        self.container_layout2 = QVBoxLayout()
+        container_widget2 = QWidget()
+        container_widget2.setLayout(self.container_layout2)
 
         self.setup_header_ui()
         self.setup_info_ui()
         self.setup_recorder_ui()
         self.setup_label_selection_ui()
 
-        self.main_layout.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignRight)
-        self.main_layout.addStretch(1)
-        self.main_layout.addWidget(container_widget)
+        self.main_layout.addWidget(container_widget1, stretch=4)
+        self.main_layout.addWidget(container_widget2, stretch=6)
         self.container_layout.addWidget(self.info_widget, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.container_layout.addWidget(self.recorder_widget)
-        self.container_layout.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.main_layout.addStretch(1)
+        self.container_layout2.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignRight)
+        self.container_layout2.addWidget(self.recorder_widget)
+        self.container_layout2.addWidget(self.label_selection_widget, alignment=Qt.AlignmentFlag.AlignCenter)
         
         self.setCentralWidget(main_widget)
         self.show_ui("recorder")
@@ -128,6 +131,7 @@ class MainWindow(QMainWindow):
     def setup_info_ui(self):
         """Set up the information user interface, including labels for displaying status and results."""
         self.info_widget = QWidget()
+
         self.info_layout = QVBoxLayout()
         self.info_widget.setLayout(self.info_layout)
 
@@ -232,6 +236,7 @@ class MainWindow(QMainWindow):
         self.header_widget = QWidget()
         self.header_layout = QHBoxLayout()
         self.header_widget.setLayout(self.header_layout)
+        self.header_widget.setFixedHeight(60)
 
         self.reset_relative_time_button = QPushButton("Reset Session")
         self.reset_relative_time_button.setFixedHeight(40)
@@ -275,6 +280,7 @@ class MainWindow(QMainWindow):
     def setup_recorder_ui(self):
         """Set up the recorder user interface, including the record button and status label."""
         self.recorder_widget = QWidget()
+
         self.recorder_layout = QVBoxLayout()
         self.recorder_widget.setLayout(self.recorder_layout)
 
@@ -297,6 +303,7 @@ class MainWindow(QMainWindow):
     def setup_label_selection_ui(self):
         """Set up the label selection user interface, including buttons for selecting labels and a combobox for additional options."""
         self.label_selection_widget = QWidget()
+
         self.label_selection_layout = QVBoxLayout()
         self.label_selection_layout.setSpacing(10)
         self.label_selection_widget.setLayout(self.label_selection_layout)
