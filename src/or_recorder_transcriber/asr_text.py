@@ -21,19 +21,33 @@ class AudioProcessor(QObject):
     :param event_logger bool: Whether to log events to a CSV file. Defaults to False.
     """
     def __init__(
-            self, 
-            asr_model_name: str = "base", 
-            embedding_model_name: str = "paraphrase-multilingual-mpnet-base-v2", 
-            asr_mode: str = "faster_whisper", 
-            language: str = "fr", 
-            gui: bool = False, 
-            event_logger: bool = False
-        ):
+        self, 
+        asr_model_name: str = "base", 
+        embedding_model_name: str = "paraphrase-multilingual-mpnet-base-v2", 
+        asr_mode: str = "faster_whisper", 
+        language: str = "fr", 
+        event_types: dict | None = None,
+        gui: bool = False, 
+        event_logger: bool = False
+    ):
+        """Initialize the AudioProcessor with the given configuration.
+        
+        :param asr_model_name str: The name of the ASR model to use.
+        :param embedding_model_name str: The name of the embedding model to use for classification.
+        :param asr_mode str: The mode of the ASR model (e.g., "faster_whisper", "pywhispercpp", or "whisper").
+        :param language str: The language for ASR transcription.
+        :param event_types dict | None: Mapping of label name to Event Type ("Medication" / "Other"),
+            loaded once by the caller (e.g. MainWindow) from labels.json. Used to resolve the Event
+            Type logged for each classified event. Defaults to None.
+        :param gui bool: Whether the application is running in GUI mode. Defaults to False.
+        :param event_logger bool: Whether to log events to a CSV file. Defaults to False.
+        """
         super().__init__()
         self.asr_model_name = asr_model_name
         self.embedding_model_name = embedding_model_name
         self.asr_mode = asr_mode
         self.language = language
+        self.event_types = event_types or {}
         self.gui = gui
         self.event_logger = EventLoggerCSV() if event_logger else None
 
@@ -115,7 +129,9 @@ class AudioProcessor(QObject):
         return results[0]
     
     def log_classification_results(self, result: dict, corrected_label: str | None = None):
-        """Log the classification results to the event logger if enabled.
+        """Log the classification results to the event logger if enabled. The Event Type is resolved
+        from the effective label (corrected label if provided, otherwise the top-scoring label) via
+        the event_types mapping loaded from labels.json.
 
         :param result dict: The classification results to log.
         :param corrected_label str | None: An optional Corrected Label for the event. Defaults to None."""
@@ -124,10 +140,13 @@ class AudioProcessor(QObject):
             dose = re.search(r'(\d+(\.\d+)?)\s*(mg|g|ml|l|units)?', text)
             dose = dose.group(0) if dose else "N/A"
 
+            effective_label = corrected_label if corrected_label is not None else result["top_k"][0]["label"]
+            event_type = self.event_types.get(effective_label, "Other")
+
             self.event_logger.append_to_csv_file(
                 event=result["event_raw"],
                 dose=dose,
-                event_type="test",
+                event_type=event_type,
                 selected_label=result["top_k"][0]["label"],
                 score=result["top_k"][0]["score"],
                 corrected_label=corrected_label
