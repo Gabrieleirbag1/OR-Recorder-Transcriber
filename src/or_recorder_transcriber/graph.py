@@ -69,10 +69,11 @@ class GraphGenerator():
             (dose curve vs. occurrence markers).
         """
         if event_type == "Medication":
-            ax.plot(
+            ax.step(
                 ev_data["Relative Time"],
                 ev_data["Dose"],
                 marker="o",
+                where="post",
                 label=label_name,
                 color=color,
             )
