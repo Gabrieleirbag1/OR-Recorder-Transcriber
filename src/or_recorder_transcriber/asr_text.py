@@ -55,6 +55,7 @@ class AudioProcessor(QObject):
         self.supervised_clustering = None
         self.classification_results: dict = {}
         self.best_event: dict = {}
+        self.text_queue: list[str] = []
 
     def load_models(self):
         """Load the ASR and embedding models based on the specified parameters."""
@@ -92,7 +93,7 @@ class AudioProcessor(QObject):
         
         :return: The transcribed text from the audio file.
         :rtype: str"""
-        return "procedure propofol 0.05 mg"  # Placeholder for actual transcription logic
+        return "procedure propofol 0.05 mg et incision et fentanyl 1mg"  # Placeholder for actual transcription logic
         if self.asr_model is None:
             self.load_asr_model()
             
@@ -111,16 +112,34 @@ class AudioProcessor(QObject):
             result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT, language="fr")
             return result["text"]
     
-    def process_audio_to_label(self, file_path: str) -> dict | None:
+    def transcribe_and_classify_audio(self, file_path: str) -> dict | None:
         """Process the audio file to transcribe it and classify the event, returning the classification results.
         
         :param file_path str: The path to the audio file to process.
         
         :return: The classification results for the processed audio file.
         :rtype: dict | None"""
+        self.text_queue = []
         text = self.transcribe_audio(file_path)
         log(f"Transcribed : '{text}'")
 
+        if not text:
+            return None
+
+        if (" et " in text):
+            self.text_queue = text.split(" et ")
+            text = self.text_queue[0]
+            self.text_queue.pop(0)
+
+        return self.process_text_to_label(text)
+
+    def process_text_to_label(self, text: str) -> dict | None:
+        """Process the given text to classify the event, returning the classification results.
+
+        :param text str: The text to classify.
+
+        :return: The classification results for the given text.
+        :rtype: dict | None"""
         if not text:
             return None
 
@@ -200,20 +219,26 @@ class AudioProcessor(QObject):
             self.log_classification_results(result)
         return result["top_k"][0]
 
-    def evaluate_audio_event(self, file_path: str) -> dict | None:
+    def evaluate_audio_event(self, file_path: str = None, text: str = None) -> tuple[dict, str] | None:
         """Evaluate the audio file to transcribe it and classify the event, returning the best event label.
 
         :param file_path str: The path to the audio file to evaluate.
+        :param text str: The text to classify.
 
-        :return: The best event label from the classification results, or None if classification failed.
-        :rtype: dict | None"""
-        self.classification_results = self.process_audio_to_label(file_path)
+        :return: The best event label from the classification results, along with the transcribed text, or None if classification failed.
+        :rtype: tuple[dict, str] | None"""
+        if file_path is None and text is None:
+            raise ValueError("Either file_path or text must be provided.")
+        if text is None:
+            self.classification_results = self.transcribe_and_classify_audio(file_path)
+        else:
+            self.classification_results = self.process_text_to_label(text)
         if self.classification_results is None:
             log("Unable to classify audio. Please try again.", level="ERROR")
-            return None
+            return None, text
 
         self.best_event = self.handle_label_selection(self.classification_results)
-        return self.best_event
+        return self.best_event, text
 
     def generate_graphs(self):
         """Generate graphs for each unique Event Type in the CSV file if the event logger is enabled."""

@@ -107,8 +107,14 @@ class MainWindow(QMainWindow):
     def show_ui(self, mode: str):
         """Show the specified UI mode (recorder or label selection)."""
         if mode == "recorder":
-            self.label_selection_widget.hide()
-            self.recorder_widget.show()
+            if len(self.audio_processor.text_queue) == 0:
+                self.label_selection_widget.hide()
+                self.recorder_widget.show()
+            else:
+                best_event, text = self.audio_processor.evaluate_audio_event(text=self.audio_processor.text_queue[0])
+                self.transcription_label.setText(text)
+                self.evaluate_best_event(best_event)
+                self.audio_processor.text_queue.pop(0)
         elif mode == "label_selection":
             self.recorder_widget.hide()
             self.label_selection_widget.show()
@@ -377,8 +383,12 @@ class MainWindow(QMainWindow):
 
         :param file_path str: The path to the recorded audio file.
         """
-        self.status_label.setText(f"Saved : {file_path}")
-        best_event = self.audio_processor.evaluate_audio_event(file_path)
+        self.status_label.setText(f"Audio Saved: {file_path.split('/')[-1]}")
+        best_event, text = self.audio_processor.evaluate_audio_event(file_path)
+        self.transcription_label.setText(text)
+        self.evaluate_best_event(best_event)
+
+    def evaluate_best_event(self, best_event):
         if best_event is None:
             self.status_label.setText(f"Unable to classify audio. Please try again.")
             return

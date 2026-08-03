@@ -19,9 +19,10 @@ def cli():
         sf.write(output_file_path, audio, sr)
         log("File 'output.wav' saved.", level="DEBUG")
 
-        result = audio_processor.evaluate_audio_event(output_file_path)
+        result, text = audio_processor.evaluate_audio_event(output_file_path)
 
         log(f"Classification results: {result}")
+        log(f"Transcribed text: {text}")
 
 def gui():
     """Run the application in graphical user interface mode."""
