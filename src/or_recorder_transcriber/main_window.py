@@ -140,6 +140,13 @@ class MainWindow(QMainWindow):
         """Update the session table with the latest event logger data (perf-optimized: reuses items, disables repaint during the batch update).
         
         :param file_content dict: The content of the event logger file, containing event information and timestamps."""
+
+        if not file_content: #if dict is empty
+            # make table empty
+            self.transcription_label.setText("No transcription yet.")
+            self.session_table.setRowCount(0)
+            return
+
         events = file_content['Events']
         self.transcription_label.setText(events[-1] if events else "No events logged yet.")
 

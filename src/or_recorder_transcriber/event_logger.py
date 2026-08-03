@@ -11,7 +11,7 @@ class EventLoggerCSV(QObject):
     
     :param output_dir str: The directory where the CSV file will be saved. Defaults to DATA_DIR."""
 
-    file_content_update = Signal(dict)
+    file_content_update = Signal(object)
     def __init__(self, output_dir: str = DATA_DIR):
         """Initialize the EventLoggerCSV with the specified output directory.
         
@@ -52,6 +52,7 @@ class EventLoggerCSV(QObject):
         delattr(self, 'start_time')
         self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': []}
         self.create_csv_file()
+        self.file_content_update.emit(None)
         
     def append_to_csv_file(self, event: str, dose: float, event_type: str, selected_label: str, score: float, corrected_label: str = None):
         """Append a new row to the CSV file with the provided event information.
