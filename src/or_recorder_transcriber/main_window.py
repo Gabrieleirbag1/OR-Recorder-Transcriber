@@ -128,54 +128,100 @@ class MainWindow(QMainWindow):
         self.transcription_label = QLabel("No transcription yet.")
         self.session_table = QTableWidget()
         self.session_table.horizontalHeader().setStretchLastSection(True)
-        headerH = ['Dose', 'Label', 'Events']
-        self.session_table.setRowCount(5)
+        headerH = ['Label', 'Dose', 'Events']
         self.session_table.setColumnCount(3)
         self.session_table.setHorizontalHeaderLabels(headerH)
-        
+        self.session_table.itemChanged.connect(self.on_table_changed)
+
         self.info_layout.addWidget(self.transcription_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.info_layout.addWidget(self.session_table)
 
     def update_session_table(self, file_content: dict):
-        """Update the session table with the latest event logger data (perf-optimized: reuses items, disables repaint during the batch update).
-        
-        :param file_content dict: The content of the event logger file, containing event information and timestamps."""
-
-        if not file_content: #if dict is empty
-            # make table empty
+        """Update the session table with the latest event logger data..."""
+        if not file_content:
             self.transcription_label.setText("No transcription yet.")
             self.session_table.setRowCount(0)
             return
 
-        events = file_content['Events']
+        events = file_content.get('Events', [])
         self.transcription_label.setText(events[-1] if events else "No events logged yet.")
 
-        row_count = len(file_content['Abs Time Vector'])
+        row_count = len(file_content.get('Abs Time Vector', []))
         if self.session_table.rowCount() < row_count:
             self.session_table.setRowCount(row_count)
 
-        for i in range(row_count):
-            self._set_cell(i, 0, str(file_content['Events'][i]))
-            self._set_cell(i, 1, str(file_content['Dose'][i]))
+        # Block signals for the whole programmatic refresh, not just per-cell
+        self.session_table.blockSignals(True)
+        try:
+            for i in range(row_count):
+                self._set_cell(i, 2, str(file_content['Events'][i]))
+                self._set_cell(i, 1, str(file_content['Dose'][i]))
 
-            corrected = file_content['Corrected Label'][i]
-            label = corrected if corrected is not None else file_content['Selected Label'][i]
-            self._set_cell(i, 2, str(label))
+                corrected = file_content['Corrected Label'][i]
+                selected_label = corrected if corrected is not None else file_content['Selected Label'][i]
 
-            rel_time_str = str(int(file_content['Relative Time'][i]))
-            header_item = self.session_table.verticalHeaderItem(i)
-            if header_item is None:
-                self.session_table.setVerticalHeaderItem(i, QTableWidgetItem(rel_time_str))
-            else:
-                header_item.setText(rel_time_str)
+                self._set_combo_cell(i, 0, selected_label)
+
+                rel_time_str = str(int(file_content['Relative Time'][i]))
+                header_item = self.session_table.verticalHeaderItem(i)
+                if header_item is None:
+                    self.session_table.setVerticalHeaderItem(i, QTableWidgetItem(rel_time_str))
+                else:
+                    header_item.setText(rel_time_str)
+        finally:
+            self.session_table.blockSignals(False)
 
     def _set_cell(self, row: int, col: int, text: str):
-        """Reuse the existing item if present instead of allocating a new QTableWidgetItem every update."""
+        """Reuse existing item if present instead of allocating a new QTableWidgetItem."""
         item = self.session_table.item(row, col)
         if item is None:
             self.session_table.setItem(row, col, QTableWidgetItem(text))
         else:
             item.setText(text)
+
+    def _set_combo_cell(self, row: int, col: int, current_label: str):
+        combo = self.session_table.cellWidget(row, col)
+
+        if not isinstance(combo, QComboBox):
+            combo = QComboBox()
+            combo.addItems(RAW_LABELS)
+            combo.setProperty("row", row)
+            combo.currentTextChanged.connect(self.on_table_changed)
+            self.session_table.setCellWidget(row, col, combo)
+
+        combo.blockSignals(True)
+        index = combo.findText(str(current_label))
+        if index != -1:
+            combo.setCurrentIndex(index)
+        combo.blockSignals(False)
+
+    def on_table_changed(self, *args):
+        """Unified callback for both QTableWidgetItem edits (Events column) and
+        QComboBox selection changes (Label column).
+
+        Qt calls this with different signatures depending on the source signal:
+        - itemChanged(QTableWidgetItem) -> args == (item,)
+        - QComboBox.currentTextChanged(str) -> args == (text,), and we recover
+            the row/column from sender().
+        """
+        sender = self.sender()
+
+        if isinstance(sender, QComboBox):
+            new_value = args[0]
+            if not new_value:
+                return
+            row = sender.property("row")
+            column_name = "Label"
+        else:
+            # Came from QTableWidget.itemChanged(item)
+            item: QTableWidgetItem = args[0]
+            new_value = item.text()
+            row = item.row()
+            #column_name can be Events or Dose
+            column_name = "Events" if item.column() == 2 else "Dose"
+
+        if self.audio_processor and self.audio_processor.event_logger:
+            self.audio_processor.event_logger.update_data(new_value, column_name, row)
 
     def setup_header_ui(self):
         """Set up the header user interface, including buttons for resetting the session, opening settings, and closing the window."""
