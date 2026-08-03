@@ -48,6 +48,7 @@ class EventLoggerCSV(QObject):
         
     def reset_session(self):
         """Reset the session by deleting the start time and creating a new CSV file."""
+        self.generate_graphs()
         delattr(self, 'start_time')
         self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': []}
         self.create_csv_file()
@@ -57,7 +58,8 @@ class EventLoggerCSV(QObject):
 
         :param event str: The event description.
         :param dose float: The dose associated with the event.
-        :param event_type str: The type of event.
+        :param event_type str: The Event Type ("Medication" / "Other"), already resolved by the
+            caller from labels.json.
         :param selected_label str: The label selected for the event.
         :param score float: The confidence score for the selected label.
         :param corrected_label str: An optional Corrected Label for the event. Defaults to None."""
@@ -72,6 +74,6 @@ class EventLoggerCSV(QObject):
             self.file_content_update.emit(self.file_content)
 
     def generate_graphs(self):
-        """Generate graphs for each unique Event Type in the CSV file."""
+        """Generate one graph per distinct Event Type found in the CSV file."""
         graph_generator = GraphGenerator(self.file_path, self.filename)
         graph_generator.generate_graph()
