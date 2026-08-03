@@ -149,9 +149,6 @@ class MainWindow(QMainWindow):
             self.session_table.setRowCount(0)
             return
 
-        events = file_content.get('Events', [])
-        self.transcription_label.setText(events[-1] if events else "No events logged yet.")
-
         row_count = len(file_content.get('Abs Time Vector', []))
         if self.session_table.rowCount() < row_count:
             self.session_table.setRowCount(row_count)

@@ -112,26 +112,26 @@ class AudioProcessor(QObject):
             result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT, language="fr")
             return result["text"]
     
-    def transcribe_and_classify_audio(self, file_path: str) -> dict | None:
+    def transcribe_and_classify_audio(self, file_path: str) -> tuple[dict, str] | None:
         """Process the audio file to transcribe it and classify the event, returning the classification results.
         
         :param file_path str: The path to the audio file to process.
         
-        :return: The classification results for the processed audio file.
-        :rtype: dict | None"""
+        :return: The classification results for the processed audio file or None if classification failed.
+        :rtype: tuple[dict, str] | None"""
         self.text_queue = []
         text = self.transcribe_audio(file_path)
         log(f"Transcribed : '{text}'")
 
         if not text:
-            return None
+            return None, text
 
         if (" et " in text):
             self.text_queue = text.split(" et ")
             text = self.text_queue[0]
             self.text_queue.pop(0)
 
-        return self.process_text_to_label(text)
+        return self.process_text_to_label(text), text
 
     def process_text_to_label(self, text: str) -> dict | None:
         """Process the given text to classify the event, returning the classification results.
@@ -230,7 +230,7 @@ class AudioProcessor(QObject):
         if file_path is None and text is None:
             raise ValueError("Either file_path or text must be provided.")
         if text is None:
-            self.classification_results = self.transcribe_and_classify_audio(file_path)
+            self.classification_results, text = self.transcribe_and_classify_audio(file_path)
         else:
             self.classification_results = self.process_text_to_label(text)
         if self.classification_results is None:
