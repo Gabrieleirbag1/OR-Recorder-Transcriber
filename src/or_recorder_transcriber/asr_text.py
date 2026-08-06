@@ -93,7 +93,6 @@ class AudioProcessor(QObject):
         
         :return: The transcribed text from the audio file.
         :rtype: str"""
-        return "procedure propofol 0.05 mg et incision et fentanyl 1mg"  # Placeholder for actual transcription logic
         if self.asr_model is None:
             self.load_asr_model()
             
