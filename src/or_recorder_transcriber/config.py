@@ -1,5 +1,6 @@
 import os
 import json
+from shutil import copy as shutil_copy
 from lite_logging.lite_logging import log
 from or_recorder_transcriber.utils import CONFIG_PATH
 from or_recorder_transcriber.main_window import MainWindow
@@ -172,14 +173,23 @@ class ConfigManager:
         try:
             with open(os.path.join(CONFIG_PATH, "config.json"), "r", encoding="utf-8") as f:
                 self.config = json.load(f)
-                log("Loaded configuration from 'config.json'.", level="DEBUG")
+                log(f"Loaded configuration from 'config.json' {os.path.join(CONFIG_PATH, 'config.json')}.", level="DEBUG")
                 self.window = self.load_window(MainWindow, self.theme, self.config)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             log(f"Error loading config: {e}", level="ERROR")
-            with open(os.path.join(CONFIG_PATH, "default_config.json"), "r", encoding="utf-8") as f:
-                self.config = json.load(f)
-                log("Loaded default configuration.", level="DEBUG")
+            try:
+                with open(os.path.join(CONFIG_PATH, "default_config.json"), "r", encoding="utf-8") as f:
+                    self.config = json.load(f)
+                    log("Loaded default configuration.", level="DEBUG")
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                log(f"Error loading default config: {e}", level="ERROR")
+                default_config_file_local_path = os.path.join(os.path.dirname(__file__), "config", "default_config.json")
+                shutil_copy(default_config_file_local_path, os.path.join(CONFIG_PATH, "default_config.json"))
+                with open(os.path.join(CONFIG_PATH, "default_config.json"), "r", encoding="utf-8") as f:
+                    self.config = json.load(f)
             self.window = self.load_window(ConfigWindow, self.theme, self.config)
+            
+
 
     @staticmethod
     def update_config(new_config: dict[str, str]):
