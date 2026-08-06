@@ -1,14 +1,27 @@
 import os
+import sys
+from platformdirs import user_documents_dir, user_data_dir
 
-THRESHOLD = 0.75
+THRESHOLD = 1
 
-ASSETS_PATH = os.path.join(os.path.dirname(__file__), "assets")
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config")
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "output")
+def resource_path(*parts):
+    """Resolve a path to a bundled resource, working both in dev and in a PyInstaller onefile build."""
+    if hasattr(sys, "_MEIPASS"):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, *parts)
+
+ASSETS_PATH = resource_path("assets")
+
+CONFIG_PATH = os.path.join(user_data_dir(), "ORRT", "config")
+
+OUTPUT_DIR = os.path.join(user_documents_dir(), "ORRT")
 AUDIO_DIR = os.path.join(OUTPUT_DIR, "audio")
 DATA_DIR = os.path.join(OUTPUT_DIR, "data")
 FIGURES_DIR = os.path.join(OUTPUT_DIR, "figures")
 
+os.makedirs(CONFIG_PATH, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
