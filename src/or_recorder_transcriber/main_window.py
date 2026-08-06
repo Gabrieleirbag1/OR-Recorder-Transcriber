@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import QApplication, QComboBox, QHeaderView, QMainWindow, QTableWidget, QTableWidgetItem, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
+from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QTableWidget, QTableWidgetItem, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont, QResizeEvent
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import ASSETS_PATH, AUDIO_DIR
+from or_recorder_transcriber.utils import ASSETS_PATH
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor
 import os
@@ -116,8 +116,9 @@ class MainWindow(QMainWindow):
             else:
                 best_event, text = self.audio_processor.evaluate_audio_event(text=self.audio_processor.text_queue[0])
                 self.transcription_label.setText(text)
-                self.evaluate_best_event(best_event)
                 self.audio_processor.text_queue.pop(0)
+                if not self.evaluate_best_event(best_event):
+                    self.show_ui("recorder")
         elif mode == "label_selection":
             self.recorder_widget.hide()
             self.label_selection_widget.show()
@@ -397,7 +398,7 @@ class MainWindow(QMainWindow):
             self.status_label.setText(f"Unable to classify audio. Please try again.")
             return
 
-        if self.audio_processor.is_label_confident(float(best_event["score"])):
+        if self.audio_processor.is_label_confident(float(best_event["score"]), threshold=self.config.get("threshold")):
             self.status_label.setText(f"Best label: {best_event['label']} (score: {best_event['score']:.2f})")
             if self.audio_processor.event_logger:
                 self.audio_processor.log_classification_results(self.audio_processor.classification_results)
@@ -407,6 +408,7 @@ class MainWindow(QMainWindow):
             button.setText(event["label"])
 
         self.show_ui("label_selection")
+        return True
 
     def on_recording_failed(self, error_message: str):
         """Handle the event when recording fails, updating the UI with an error message.

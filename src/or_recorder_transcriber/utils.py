@@ -2,8 +2,6 @@ import os
 import sys
 from platformdirs import user_documents_dir, user_data_dir
 
-THRESHOLD = 1
-
 def resource_path(*parts):
     """Resolve a path to a bundled resource, working both in dev and in a PyInstaller onefile build."""
     if hasattr(sys, "_MEIPASS"):

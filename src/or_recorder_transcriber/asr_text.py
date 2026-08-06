@@ -3,7 +3,7 @@ import os
 import re
 from PySide6.QtCore import QObject
 from lite_logging.lite_logging import log
-from or_recorder_transcriber.utils import ASSETS_PATH, THRESHOLD
+from or_recorder_transcriber.utils import ASSETS_PATH
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
 from or_recorder_transcriber.event_logger import EventLoggerCSV
 
@@ -171,14 +171,15 @@ class AudioProcessor(QObject):
                 corrected_label=corrected_label
             )
 
-    def is_label_confident(self, score: float, threshold: float = THRESHOLD) -> bool:
+    def is_label_confident(self, score: float, threshold: float = 0.75) -> bool:
         """Determine if the label is confident based on the score and threshold.
 
         :param score float: The confidence score of the label.
-        :param threshold float: The threshold for determining label confidence. Defaults to THRESHOLD.
+        :param threshold float: The threshold for determining label confidence. Defaults to 0.75.
 
         :return: True if the label is confident, False otherwise.
         :rtype: bool"""
+        log(f"Checking label confidence: score={score:.2f}, threshold={threshold}", level="DEBUG")
         if score <= threshold:
             log(f"Score {score:.2f} is below the threshold {threshold}. Label is not confident.", level="DEBUG")
             return False

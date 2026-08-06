@@ -79,7 +79,15 @@ class ConfigWindow(QMainWindow):
         self.language_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.language_combobox.addItems(["fr", "en", "es", "de", "it", "pt", "nl", "ru", "zh"])
         self.language_combobox.setCurrentText(self.config.get("language", "fr"))
-        
+
+        self.threshold_label = QLabel("Threshold:")
+        self.threshold_combobox = QComboBox()
+        self.threshold_combobox.setMaxVisibleItems(10)
+        self.threshold_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        for i in range(101):
+            self.threshold_combobox.addItem(str(i / 100.0))
+        self.threshold_combobox.setCurrentText(str(self.config.get("threshold", 0.75)))
+
         self.embedding_model_label = QLabel("Embedding Model:")
         self.embedding_model_combobox = QComboBox()
         self.embedding_model_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -99,6 +107,8 @@ class ConfigWindow(QMainWindow):
         self.up_layout.addWidget(self.asr_mode_combobox, 1, 1)
         self.up_layout.addWidget(self.language_label, 2, 0)
         self.up_layout.addWidget(self.language_combobox, 2, 1)
+        self.up_layout.addWidget(self.threshold_label, 3, 0)
+        self.up_layout.addWidget(self.threshold_combobox, 3, 1)
 
         layout.addWidget(self.up_widget)
         layout.addWidget(self.embedding_model_label, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -114,13 +124,15 @@ class ConfigWindow(QMainWindow):
         embedding_model_dir = self.embedding_model_browse.text().replace("Selected: ", "")
         asr_mode = self.asr_mode_combobox.currentText()
         language = self.language_combobox.currentText()
-        log(f"Configuration confirmed: ASR Model: {asr_model_name}, Embedding Model: {embedding_model_name}, ASR Mode: {asr_mode}, Language: {language}", level="DEBUG")
+        threshold = self.threshold_combobox.currentText()
+        log(f"Configuration confirmed: ASR Model: {asr_model_name}, Embedding Model: {embedding_model_name}, ASR Mode: {asr_mode}, Language: {language}, Threshold: {threshold}", level="DEBUG")
         self.config = {
             "asr_model_name": asr_model_name,
             "embedding_model_name": embedding_model_name,
             "embedding_model_dir": embedding_model_dir,
             "asr_mode": asr_mode,
-            "language": language
+            "language": language,
+            "threshold": float(threshold)
         }
         ConfigManager.update_config(self.config)
         self.close()
