@@ -82,10 +82,11 @@ class ConfigWindow(QMainWindow):
 
         self.threshold_label = QLabel("Threshold:")
         self.threshold_combobox = QComboBox()
-        self.threshold_combobox.setMaxVisibleItems(10)
         self.threshold_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         for i in range(101):
             self.threshold_combobox.addItem(str(i / 100.0))
+        self.threshold_combobox.setEditable(True)
+        self.threshold_combobox.setMaxVisibleItems(10)
         self.threshold_combobox.setCurrentText(str(self.config.get("threshold", 0.75)))
 
         self.embedding_model_label = QLabel("Embedding Model:")
