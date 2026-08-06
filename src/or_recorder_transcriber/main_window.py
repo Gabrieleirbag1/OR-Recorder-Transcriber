@@ -391,7 +391,8 @@ class MainWindow(QMainWindow):
         self.status_label.setText(f"Audio Saved: {file_path.split('/')[-1]}")
         best_event, text = self.audio_processor.evaluate_audio_event(file_path)
         self.transcription_label.setText(text)
-        self.evaluate_best_event(best_event)
+        if not self.evaluate_best_event(best_event):
+            self.show_ui("recorder")
 
     def evaluate_best_event(self, best_event):
         if best_event is None:
