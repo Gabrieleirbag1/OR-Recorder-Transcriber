@@ -90,8 +90,8 @@ class MainWindow(QMainWindow):
         self.setup_recorder_ui()
         self.setup_label_selection_ui()
 
-        self.main_layout.addWidget(container_widget1, stretch=4)
-        self.main_layout.addWidget(container_widget2, stretch=6)
+        self.main_layout.addWidget(container_widget1, stretch=5)
+        self.main_layout.addWidget(container_widget2, stretch=5)
         self.container_layout.addWidget(self.info_widget, alignment=Qt.AlignmentFlag.AlignLeft)
         self.container_layout2.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignRight)
         self.container_layout2.addWidget(self.recorder_widget)
@@ -148,8 +148,8 @@ class MainWindow(QMainWindow):
         self.transcription_label = QLabel("No transcription yet.")
         self.session_table = QTableWidget()
         self.session_table.horizontalHeader().setStretchLastSection(False)
-        headerH = ['Label', 'Dose', 'Events', '']
-        self.session_table.setColumnCount(4)
+        headerH = ['Label', 'Dose', 'Med Type', 'Events', '']
+        self.session_table.setColumnCount(5)
         self.session_table.setHorizontalHeaderLabels(headerH)
         self.session_table.itemChanged.connect(self.on_table_changed)
 
@@ -157,8 +157,9 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self.session_table.setColumnWidth(3, 20)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+        self.session_table.setColumnWidth(4, 20)
 
         self.info_layout.addWidget(self.transcription_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.info_layout.addWidget(self.session_table)
@@ -178,14 +179,17 @@ class MainWindow(QMainWindow):
         self.session_table.blockSignals(True)
         try:
             for i in range(row_count):
-                self._set_cell(i, 2, str(file_content['Events'][i]))
+                self._set_cell(i, 3, str(file_content['Events'][i]))
                 self._set_cell(i, 1, str(file_content['Dose'][i]))
 
                 corrected = file_content['Corrected Label'][i]
                 selected_label = corrected if corrected is not None else file_content['Selected Label'][i]
+                self._set_combo_cell(i, 0, selected_label, RAW_LABELS)
 
-                self._set_combo_cell(i, 0, selected_label)
-                self._set_delete_button_cell(i, 3)
+                medication_type = file_content['Medication Type'][i]
+                self._set_combo_cell(i, 2, medication_type if medication_type is not None else "N/A", ["Perfusion", "Bolus", "N/A"], min_width=100)
+
+                self._set_delete_button_cell(i, 4)
 
                 rel_time_str = str(int(file_content['Relative Time'][i]))
                 header_item = self.session_table.verticalHeaderItem(i)
@@ -205,22 +209,32 @@ class MainWindow(QMainWindow):
         else:
             item.setText(text)
 
-    def _set_combo_cell(self, row: int, col: int, current_label: str):
+    def _set_combo_cell(self, row: int, col: int, current_value: str, options: list[str], min_width: int = 300):
+        """Ensure a combobox exists in the given cell with the given options; reuse if already present.
+
+        :param row int: The row index of the cell.
+        :param col int: The column index of the cell.
+        :param current_value str: The value that should be selected/displayed.
+        :param options list[str]: The list of choices for this combobox (differs between Label and Med Type columns).
+        """
         combo = self.session_table.cellWidget(row, col)
 
         if not isinstance(combo, QComboBox):
             combo = QComboBox()
-            combo.addItems(RAW_LABELS)
+            combo.addItems(options)
             combo.setProperty("row", row)
+            combo.setProperty("col", col)
             combo.setEditable(True)
-            combo.view().setMinimumWidth(400)
+            combo.view().setMinimumWidth(min_width)
             combo.currentTextChanged.connect(self.on_table_changed)
             self.session_table.setCellWidget(row, col, combo)
 
         combo.blockSignals(True)
-        index = combo.findText(str(current_label))
+        index = combo.findText(str(current_value))
         if index != -1:
             combo.setCurrentIndex(index)
+        else:
+            combo.setCurrentText(str(current_value))
         combo.blockSignals(False)
 
     def _set_delete_button_cell(self, row: int, col: int):
@@ -264,8 +278,8 @@ class MainWindow(QMainWindow):
             self.session_table.removeRow(row)
 
     def on_table_changed(self, *args):
-        """Unified callback for both QTableWidgetItem edits (Events column) and
-        QComboBox selection changes (Label column).
+        """Unified callback for both QTableWidgetItem edits (Dose/Events columns) and
+        QComboBox selection changes (Label/Med Type columns).
 
         Qt calls this with different signatures depending on the source signal:
         - itemChanged(QTableWidgetItem) -> args == (item,)
@@ -279,14 +293,22 @@ class MainWindow(QMainWindow):
             if not new_value:
                 return
             row = sender.property("row")
-            column_name = "Label"
+            col = sender.property("col")
+            if col == 0:
+                column_name = "Label"
+            elif col == 2:
+                column_name = "Medication Type"
+                if new_value == "N/A":
+                    new_value = None
+            else:
+                return
         else:
             # Came from QTableWidget.itemChanged(item)
             item: QTableWidgetItem = args[0]
             new_value = item.text()
             row = item.row()
-            #column_name can be Events or Dose
-            column_name = "Events" if item.column() == 2 else "Dose"
+            # column_name can be Dose or Events
+            column_name = "Dose" if item.column() == 1 else "Events"
 
         if self.audio_processor and self.audio_processor.event_logger:
             self.audio_processor.event_logger.update_data(new_value, column_name, row)
@@ -393,7 +415,7 @@ class MainWindow(QMainWindow):
         self.labels_combobox.setEditable(True)
         self.labels_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.labels_combobox.addItems(RAW_LABELS)
-        self.labels_combobox.view().setMinimumWidth(400)
+        self.labels_combobox.view().setMinimumWidth(300)
 
         self.confirm_button = QPushButton("Ok")
         self.confirm_button.clicked.connect(lambda: self.on_label_selected(self.labels_combobox))
@@ -504,6 +526,6 @@ class MainWindow(QMainWindow):
         """
         super().resizeEvent(event)
         if hasattr(self, "label_selection_widget"):
-            self.label_selection_widget.setMaximumWidth(int(self.width() * 0.8))
+            self.label_selection_widget.setMaximumWidth(int(self.width() * 0.4))
         if hasattr(self, "session_table"):
-            self.session_table.setFixedSize(int(self.width() * 0.4), int(self.height() * 0.6))
+            self.session_table.setFixedSize(int(self.width() * 0.5), int(self.height() * 0.6))
