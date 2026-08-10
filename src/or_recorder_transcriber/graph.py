@@ -132,7 +132,6 @@ class GraphGenerator():
                 self.plot_event_curve(ax, ev_data, str(lab), color, event_type)
 
         self.style_axes(ax, f"Event Type : {event_type}", event_type)
-        fig.tight_layout()
         return fig
 
     def style_axes(self, ax: plt.Axes, title: str, event_type: str):
@@ -148,7 +147,13 @@ class GraphGenerator():
         ax.set_title(title)
         handles, labels = ax.get_legend_handles_labels()
         if handles:
-            ax.legend(loc="best", fontsize=9)
+            ax.legend(
+                loc="upper left",
+                bbox_to_anchor=(1.02, 1),
+                borderaxespad=0,
+                fontsize=8,
+                ncol=1 if len(handles) <= 20 else 2,  # split into 2 columns if there are a lot of entries
+            )
         ax.grid(True, alpha=0.3)
 
     def save_figure(self, fig: plt.Figure, event_type: str) -> str:
@@ -162,7 +167,7 @@ class GraphGenerator():
         """
         safe_event_type = re.sub(r"[^\w\-]", "_", str(event_type))
         out_path = os.path.join(FIGURES_DIR, f"{self.filename}_{safe_event_type}.png")
-        fig.savefig(out_path, dpi=150)
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
         return out_path
 
