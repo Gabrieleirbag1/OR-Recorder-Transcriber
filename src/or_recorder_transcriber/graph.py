@@ -65,8 +65,7 @@ class GraphGenerator():
         :param ev_data pd.DataFrame: The DataFrame containing data for the specific label.
         :param label_name str: The selected or corrected label for the event (may include the medication type for legend clarity).
         :param color str: The color to use for the plot.
-        :param event_type str: The Event Type ("Medication" or "Other") controlling the plot style
-            (dose curve vs. occurrence markers).
+        :param event_type str: The Event Type ("Medication" or "Other") controlling the plot style (dose curve vs. occurrence markers).
         :param linestyle str: The line style to use, e.g. "-" for Perfusion, "--" for Bolus. Ignored for non-Medication events.
         """
         if event_type == "Medication":

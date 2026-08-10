@@ -36,9 +36,7 @@ class AudioProcessor(QObject):
         :param embedding_model_name str: The name of the embedding model to use for classification.
         :param asr_mode str: The mode of the ASR model (e.g., "faster_whisper", "pywhispercpp", or "whisper").
         :param language str: The language for ASR transcription.
-        :param event_types dict | None: Mapping of label name to Event Type ("Medication" / "Other"),
-            loaded once by the caller (e.g. MainWindow) from labels.json. Used to resolve the Event
-            Type logged for each classified event. Defaults to None.
+        :param event_types dict | None: Mapping of label name to Event Type ("Medication" / "Other"),loaded once by the caller (e.g. MainWindow) from labels.json. Used to resolve the Event. Type logged for each classified event. Defaults to None.
         :param gui bool: Whether the application is running in GUI mode. Defaults to False.
         :param event_logger bool: Whether to log events to a CSV file. Defaults to False.
         """

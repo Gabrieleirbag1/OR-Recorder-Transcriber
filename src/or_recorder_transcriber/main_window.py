@@ -108,7 +108,10 @@ class MainWindow(QMainWindow):
         self.config_window.show()
 
     def show_ui(self, mode: str):
-        """Show the specified UI mode (recorder or label selection)."""
+        """Show the specified UI mode (recorder or label selection).
+        
+        :param mode str: The mode to display ("recorder" or "label_selection").
+        """
         if mode == "recorder":
             if len(self.audio_processor.text_queue) == 0:
                 self.label_selection_widget.hide()
@@ -165,7 +168,9 @@ class MainWindow(QMainWindow):
         self.info_layout.addWidget(self.session_table)
 
     def update_session_table(self, file_content: dict):
-        """Update the session table with the latest event logger data..."""
+        """Update the session table with the latest event logger data, reusing existing QTableWidgetItems and QComboBoxes to avoid unnecessary allocations.
+        
+        :param file_content dict: The content of the event logger CSV file, structured as a dictionary with keys for each column."""
         if not file_content:
             self.transcription_label.setText("No transcription yet.")
             self.session_table.setRowCount(0)
@@ -202,7 +207,11 @@ class MainWindow(QMainWindow):
         self.session_table.scrollToBottom()
 
     def _set_cell(self, row: int, col: int, text: str):
-        """Reuse existing item if present instead of allocating a new QTableWidgetItem."""
+        """Reuse existing item if present instead of allocating a new QTableWidgetItem.
+        
+        :param row int: The row index of the cell.
+        :param col int: The column index of the cell.
+        :param text str: The text to set in the cell."""
         item = self.session_table.item(row, col)
         if item is None:
             self.session_table.setItem(row, col, QTableWidgetItem(text))
@@ -216,6 +225,7 @@ class MainWindow(QMainWindow):
         :param col int: The column index of the cell.
         :param current_value str: The value that should be selected/displayed.
         :param options list[str]: The list of choices for this combobox (differs between Label and Med Type columns).
+        :param min_width int: The minimum width of the combobox dropdown view (default is 300).
         """
         combo = self.session_table.cellWidget(row, col)
 
@@ -285,6 +295,8 @@ class MainWindow(QMainWindow):
         - itemChanged(QTableWidgetItem) -> args == (item,)
         - QComboBox.currentTextChanged(str) -> args == (text,), and we recover
             the row/column from sender().
+
+        :param *args: Variable arguments depending on the signal source.
         """
         sender = self.sender()
 
@@ -485,7 +497,14 @@ class MainWindow(QMainWindow):
         if not self.evaluate_best_event(best_event):
             self.show_ui("recorder")
 
-    def evaluate_best_event(self, best_event):
+    def evaluate_best_event(self, best_event: dict | None) -> bool:
+        """Evaluate the best event classification result and update the UI accordingly.
+
+        :param best_event dict | None: The best event classification result, or None if classification failed.
+        
+        :return: True if the best event was evaluated and the label selection UI is shown, False if the recorder UI should be shown instead.
+        :rtype: bool
+        """
         if best_event is None:
             self.status_label.setText(f"Unable to classify audio. Please try again.")
             return

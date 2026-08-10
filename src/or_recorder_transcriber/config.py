@@ -141,6 +141,12 @@ class ConfigWindow(QMainWindow):
         self.main_window = ConfigManager.load_window(MainWindow, self.theme, self.config)
 
     def list_embedding_models(self, directory: str) -> list[str]:
+        """List all embedding models in the specified directory and populate the combobox.
+        
+        :param directory str: The directory to search for embedding models.
+        
+        :return: A list of embedding model paths found in the directory.
+        :rtype: list[str]"""
         self.embedding_model_browse.setText(f"Selected: {directory}")
         try: 
             models = [os.path.join(os.path.abspath(directory), entry) for entry in os.listdir(directory)]

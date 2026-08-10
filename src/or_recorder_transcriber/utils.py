@@ -2,8 +2,13 @@ import os
 import sys
 from platformdirs import user_documents_dir, user_data_dir
 
-def resource_path(*parts):
-    """Resolve a path to a bundled resource, working both in dev and in a PyInstaller onefile build."""
+def resource_path(*parts: str) -> str:
+    """Resolve a path to a bundled resource, working both in dev and in a PyInstaller onefile build.
+    
+    :param *parts: Path components to join.
+
+    :return: The resolved absolute path to the resource.
+    :rtype: str"""
     if hasattr(sys, "_MEIPASS"):
         base_path = sys._MEIPASS
     else:
