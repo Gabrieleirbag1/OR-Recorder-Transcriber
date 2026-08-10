@@ -203,6 +203,7 @@ class MainWindow(QMainWindow):
             combo = QComboBox()
             combo.addItems(RAW_LABELS)
             combo.setProperty("row", row)
+            combo.setEditable(True)
             combo.currentTextChanged.connect(self.on_table_changed)
             self.session_table.setCellWidget(row, col, combo)
 

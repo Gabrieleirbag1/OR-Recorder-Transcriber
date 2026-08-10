@@ -20,7 +20,7 @@ class EventLoggerCSV(QObject):
         super().__init__()
         self.output_dir = output_dir
 
-        self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': []}
+        self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': [], 'Medication Type': []}
         self.file_path = None
         self.create_csv_file()
 
@@ -31,7 +31,7 @@ class EventLoggerCSV(QObject):
         self.file_path = os.path.join(self.output_dir, self.filename)
         with open(self.file_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Abs Time Vector', 'Relative Time', 'Events', 'Dose', 'Event Type', 'Selected Label', 'Score', 'Corrected Label'])
+            writer.writerow(['Abs Time Vector', 'Relative Time', 'Events', 'Dose', 'Event Type', 'Selected Label', 'Score', 'Corrected Label', 'Medication Type'])
 
     def relative_time_counter(self) -> float:
         """Calculate the relative time in seconds since the first event was logged.
@@ -51,26 +51,27 @@ class EventLoggerCSV(QObject):
         """Reset the session by deleting the start time and creating a new CSV file."""
         self.generate_graphs()
         delattr(self, 'start_time')
-        self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': []}
+        self.file_content = {'Abs Time Vector': [], 'Relative Time': [], 'Events': [], 'Dose': [], 'Event Type': [], 'Selected Label': [], 'Score': [], 'Corrected Label': [], 'Medication Type': []}
         self.create_csv_file()
         self.file_content_update.emit(None)
         
-    def append_to_csv_file(self, event: str, dose: float, event_type: str, selected_label: str, score: float, corrected_label: str = None):
+    def append_to_csv_file(self, event: str, dose: float, event_type: str, selected_label: str, score: float, corrected_label: str = None, medication_type: str | None = None, ):
         """Append a new row to the CSV file with the provided event information.
 
         :param event str: The event description.
         :param dose float: The dose associated with the event.
-        :param event_type str: The Event Type ("Medication" / "Other"), already resolved by the
-            caller from labels.json.
+        :param event_type str: The Event Type ("Medication" / "Other"), already resolved by the caller from labels.json.
         :param selected_label str: The label selected for the event.
         :param score float: The confidence score for the selected label.
-        :param corrected_label str: An optional Corrected Label for the event. Defaults to None."""
+        :param corrected_label str: An optional Corrected Label for the event. Defaults to None.
+        :param medication_type str | None: The type of medication, if applicable. Defaults to None. Should be perfusion or bolus.
+        """
         abs_time_vector = datetime.datetime.now().strftime("%d-%b-%Y %H:%M:%S")
         relative_time = self.relative_time_counter()
-        params = [abs_time_vector, relative_time, event, dose, event_type, selected_label, score, corrected_label]
+        params = [abs_time_vector, relative_time, event, dose, event_type, selected_label, score, corrected_label, medication_type]
         with open(self.file_path, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow([abs_time_vector, relative_time, event, dose, event_type, selected_label, score, corrected_label])
+            writer.writerow([abs_time_vector, relative_time, event, dose, event_type, selected_label, score, corrected_label, medication_type])
             for i, (key, _) in enumerate(self.file_content.items()):
                 self.file_content[key].append(params[i])
             self.file_content_update.emit(self.file_content)
