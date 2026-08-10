@@ -46,10 +46,11 @@ fi
 cd "$current_dir/Build"
 
 # Create the executable
+
 if [ "$(uname)" = "Darwin" ]; then
-    pyinstaller --noconfirm --onefile --windowed --add-data "$current_dir/src/or_recorder_transcriber/assets:assets/" --add-data "$current_dir/src/or_recorder_transcriber/config:config/" --distpath "$current_dir" --name "ORRT" "$current_dir/src/or_recorder_transcriber/main.py"
+    pyinstaller --noconfirm --onefile --windowed --add-data "$current_dir/src/or_recorder_transcriber/assets:assets/" --add-data "$current_dir/src/or_recorder_transcriber/config:config/" --add-data "$(python -c 'import whisper, os; print(os.path.dirname(whisper.__file__))')/assets:whisper/assets" --add-data "$(python -c 'import faster_whisper, os; print(os.path.dirname(faster_whisper.__file__))')/assets:faster_whisper/assets" --distpath "$current_dir" --name "ORRT" "$current_dir/src/or_recorder_transcriber/main.py"
 else
-    pyinstaller --noconfirm --onefile --windowed --add-data "$current_dir/src/or_recorder_transcriber/assets:assets/" --add-data "$current_dir/src/or_recorder_transcriber/config:config/" --distpath "$current_dir" --name "ORRT" "$current_dir/src/or_recorder_transcriber/main.py"
+    pyinstaller --noconfirm --onefile --windowed --add-data "$current_dir/src/or_recorder_transcriber/assets:assets/" --add-data "$current_dir/src/or_recorder_transcriber/config:config/" --add-data "$(python -c 'import whisper, os; print(os.path.dirname(whisper.__file__))')/assets:whisper/assets" --add-data "$(python -c 'import faster_whisper, os; print(os.path.dirname(faster_whisper.__file__))')/assets:faster_whisper/assets" --distpath "$current_dir" --name "ORRT" "$current_dir/src/or_recorder_transcriber/main.py"
 fi
 
 # Remove the virtual environment
