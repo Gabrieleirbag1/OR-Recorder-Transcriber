@@ -370,6 +370,10 @@ class MainWindow(QMainWindow):
             self.label_buttons.append(button)
             self.buttons_layout.addWidget(button)
 
+        self.medication_type_combobox = QComboBox()
+        self.medication_type_combobox.addItems(["Perfusion", "Bolus", "N/A"])
+        self.medication_type_combobox.setEditable(True)
+
         self.label_combobox_selection_widget = QWidget()
         self.label_combobox_selection_layout = QHBoxLayout()
         self.label_combobox_selection_layout.setSpacing(10)
@@ -383,6 +387,7 @@ class MainWindow(QMainWindow):
         self.confirm_button.clicked.connect(lambda: self.on_label_selected(self.labels_combobox))
 
         self.label_combobox_selection_layout.addWidget(self.labels_combobox)
+        self.label_combobox_selection_layout.addWidget(self.medication_type_combobox)
         self.label_combobox_selection_layout.addWidget(self.confirm_button)
 
         self.label_selection_layout.addLayout(self.buttons_layout)
@@ -401,7 +406,8 @@ class MainWindow(QMainWindow):
         log(f"User selected label: {best_label}", level="DEBUG")
         if self.audio_processor.event_logger:
             best_label = best_label if self.audio_processor.classification_results["best_label"] != best_label else None
-            self.audio_processor.log_classification_results(self.audio_processor.classification_results, corrected_label=best_label)
+            medication_type = self.medication_type_combobox.currentText() if self.medication_type_combobox.currentText() != "N/A" else None
+            self.audio_processor.log_classification_results(self.audio_processor.classification_results, corrected_label=best_label, medication_type=medication_type)
         self.show_ui("recorder")
 
     def on_record_clicked(self):
@@ -451,8 +457,10 @@ class MainWindow(QMainWindow):
         if self.audio_processor.is_label_confident(float(best_event["score"]), threshold=self.config.get("threshold")):
             self.status_label.setText(f"Best label: {best_event['label']} (score: {best_event['score']:.2f})")
             if self.audio_processor.event_logger:
-                self.audio_processor.log_classification_results(self.audio_processor.classification_results)
-            return
+                if self.audio_processor.log_classification_results(self.audio_processor.classification_results):
+                    return
+            else:
+                return
 
         for button, event in zip(self.label_buttons, self.audio_processor.classification_results["top_k"]):
             button.setText(event["label"])

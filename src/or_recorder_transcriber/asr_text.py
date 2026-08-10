@@ -93,7 +93,7 @@ class AudioProcessor(QObject):
         
         :return: The transcribed text from the audio file.
         :rtype: str"""
-        return "procedure propofol 0.05 mg et incision et fentanyl 1mg"  # Placeholder for actual transcription logic
+        return "perfusion propofol 0.05 mg et incision et fentanyl 1mg bolus et propofol 0.06 mg"  # Placeholder for actual transcription logic
         if self.asr_model is None:
             self.load_asr_model()
             
@@ -146,14 +146,35 @@ class AudioProcessor(QObject):
         results, _ = self.supervised_clustering.match_events_to_labels([text], RAW_LABELS, self.embedding_model_name, top_k=3)
         log("Classification results: " + str(results[0]), level="DEBUG")
         return results[0]
+
+    def extract_medication_type(self, text: str) -> str | None:
+        """Extract the medication type from the given text based on predefined keywords.
+
+        :param text str: The text to analyze for medication type.
+
+        :return: The extracted medication type ("perfusion" or "bolus") or None if not found.
+        :rtype: str | None"""
+        perfusion_keywords = ["perfusion", "perf"]
+        bolus_keywords = ["bolus", "bol"]
+
+        text_lower = text.lower()
+        if any(keyword in text_lower for keyword in perfusion_keywords):
+            return "Perfusion"
+        elif any(keyword in text_lower for keyword in bolus_keywords):
+            return "Bolus"
+        return None
     
-    def log_classification_results(self, result: dict, corrected_label: str | None = None):
+    def log_classification_results(self, result: dict, corrected_label: str | None = None, medication_type: str | None = None) -> bool:
         """Log the classification results to the event logger if enabled. The Event Type is resolved
         from the effective label (corrected label if provided, otherwise the top-scoring label) via
         the event_types mapping loaded from labels.json.
 
         :param result dict: The classification results to log.
-        :param corrected_label str | None: An optional Corrected Label for the event. Defaults to None."""
+        :param corrected_label str | None: An optional Corrected Label for the event. Defaults to None.
+        :param medication_type str | None: The type of medication, if applicable. Defaults to None. Should be perfusion or bolus.
+        
+        :return: True if the results were logged successfully, False otherwise.
+        :rtype: bool"""
         if self.event_logger:
             text = result["event_raw"] #propofol 0.05 mg 
             dose = re.search(r'(\d+(\.\d+)?)\s*(mg|g|ml|l|units)?', text)
@@ -162,15 +183,23 @@ class AudioProcessor(QObject):
             effective_label = corrected_label if corrected_label is not None else result["top_k"][0]["label"]
             event_type = self.event_types.get(effective_label, "Other")
 
+            if event_type == "Medication" and medication_type is None:
+                medication_type = self.extract_medication_type(text)
+                if not medication_type:
+                    log(f"Unable to determine medication type from text: '{text}'. Event not logged.", level="WARNING")
+                    return False
+
             self.event_logger.append_to_csv_file(
                 event=result["event_raw"],
                 dose=dose,
                 event_type=event_type,
                 selected_label=result["top_k"][0]["label"],
                 score=result["top_k"][0]["score"],
-                corrected_label=corrected_label
+                corrected_label=corrected_label,
+                medication_type=medication_type
             )
-
+        return True
+    
     def is_label_confident(self, score: float, threshold: float = 0.75) -> bool:
         """Determine if the label is confident based on the score and threshold.
 
