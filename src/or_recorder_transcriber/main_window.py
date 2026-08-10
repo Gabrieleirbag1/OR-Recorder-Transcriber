@@ -380,6 +380,7 @@ class MainWindow(QMainWindow):
         self.label_combobox_selection_widget.setLayout(self.label_combobox_selection_layout)
 
         self.labels_combobox = QComboBox()
+        self.labels_combobox.setEditable(True)
         self.labels_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.labels_combobox.addItems(RAW_LABELS)
 
@@ -464,6 +465,8 @@ class MainWindow(QMainWindow):
 
         for button, event in zip(self.label_buttons, self.audio_processor.classification_results["top_k"]):
             button.setText(event["label"])
+
+        self.labels_combobox.setCurrentText(best_event["label"])
 
         self.show_ui("label_selection")
         return True
