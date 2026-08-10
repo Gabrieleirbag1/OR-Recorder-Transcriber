@@ -58,15 +58,16 @@ class GraphGenerator():
         """
         return plt.cm.tab10.colors if n_events <= 10 else plt.cm.tab20.colors
 
-    def plot_event_curve(self, ax: plt.Axes, ev_data: pd.DataFrame, label_name: str, color: str, event_type: str):
+    def plot_event_curve(self, ax: plt.Axes, ev_data: pd.DataFrame, label_name: str, color: str, event_type: str, linestyle: str = "-"):
         """Plot the curve of a single label on the given axis.
 
         :param ax plt.Axes: The matplotlib axis to plot on.
         :param ev_data pd.DataFrame: The DataFrame containing data for the specific label.
-        :param label_name str: The selected or corrected label for the event.
+        :param label_name str: The selected or corrected label for the event (may include the medication type for legend clarity).
         :param color str: The color to use for the plot.
         :param event_type str: The Event Type ("Medication" or "Other") controlling the plot style
             (dose curve vs. occurrence markers).
+        :param linestyle str: The line style to use, e.g. "-" for Perfusion, "--" for Bolus. Ignored for non-Medication events.
         """
         if event_type == "Medication":
             ax.step(
@@ -76,6 +77,7 @@ class GraphGenerator():
                 where="post",
                 label=label_name,
                 color=color,
+                linestyle=linestyle,
             )
         else:
             ax.scatter(
@@ -90,6 +92,10 @@ class GraphGenerator():
     def build_figure_for_event_type(self, sub: pd.DataFrame, event_type: str) -> plt.Figure:
         """Build a standalone matplotlib figure for a single Event Type.
 
+        For "Medication" events, each label gets one color, and is split into
+        separate curves per Medication Type (Perfusion/Bolus) using different
+        line styles, all sharing the same color and the same axes.
+
         :param sub pd.DataFrame: The subset of the DataFrame corresponding to the specific Event Type.
         :param event_type str: The Event Type being processed.
 
@@ -99,11 +105,31 @@ class GraphGenerator():
         fig, ax = plt.subplots(figsize=(8, 6))
         labels = sub["Label"].dropna().unique()
         colors = self.get_colors(len(labels))
+        linestyles = {"Perfusion": "-", "Bolus": "--"}
 
         for i, lab in enumerate(sorted(labels, key=str)):
-            ev_data = sub[sub["Label"] == lab].sort_values("Relative Time")
+            label_data = sub[sub["Label"] == lab]
             color = colors[i % len(colors)]
-            self.plot_event_curve(ax, ev_data, str(lab), color, event_type)
+
+            if event_type == "Medication" and "Medication Type" in label_data.columns:
+                med_types = label_data["Medication Type"].dropna().unique()
+                if len(med_types) == 0:
+                    # No medication type info at all for this label: single solid curve
+                    ev_data = label_data.sort_values("Relative Time")
+                    self.plot_event_curve(ax, ev_data, str(lab), color, event_type)
+                else:
+                    for med_type in sorted(med_types, key=str):
+                        ev_data = label_data[label_data["Medication Type"] == med_type].sort_values("Relative Time")
+                        linestyle = linestyles.get(med_type, "-")
+                        self.plot_event_curve(ax, ev_data, f"{lab} ({med_type})", color, event_type, linestyle=linestyle)
+
+                    # Rows for this label with no medication type at all (e.g. NaN)
+                    no_type_data = label_data[label_data["Medication Type"].isna()].sort_values("Relative Time")
+                    if not no_type_data.empty:
+                        self.plot_event_curve(ax, no_type_data, str(lab), color, event_type, linestyle=":")
+            else:
+                ev_data = label_data.sort_values("Relative Time")
+                self.plot_event_curve(ax, ev_data, str(lab), color, event_type)
 
         self.style_axes(ax, f"Event Type : {event_type}", event_type)
         fig.tight_layout()
