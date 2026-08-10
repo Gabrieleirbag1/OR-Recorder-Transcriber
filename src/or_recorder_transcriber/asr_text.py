@@ -183,11 +183,14 @@ class AudioProcessor(QObject):
             effective_label = corrected_label if corrected_label is not None else result["top_k"][0]["label"]
             event_type = self.event_types.get(effective_label, "Other")
 
-            if event_type == "Medication" and medication_type is None:
-                medication_type = self.extract_medication_type(text)
-                if not medication_type:
-                    log(f"Unable to determine medication type from text: '{text}'. Event not logged.", level="WARNING")
-                    return False
+            if event_type == "Medication":
+                if medication_type is None:
+                    medication_type = self.extract_medication_type(text)
+                    if not medication_type:
+                        log(f"Unable to determine medication type from text: '{text}'. Event not logged.", level="WARNING")
+                        return False
+            else:
+                medication_type = "N/A"
 
             self.event_logger.append_to_csv_file(
                 event=result["event_raw"],

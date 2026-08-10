@@ -355,7 +355,9 @@ class MainWindow(QMainWindow):
         if self.audio_processor is not None and self.audio_processor.event_logger is not None:
             reply = QMessageBox.question(self, "Reset Session", f"Relative time since first event: {self.audio_processor.event_logger.relative_time_counter()} seconds.\n Do you want to reset the session?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
+                self.audio_processor.text_queue.clear()
                 self.audio_processor.event_logger.reset_session()
+                self.show_ui("recorder")
         else:
             QMessageBox.warning(self, "Relative Time", "Event logger is not initialized.")
 
