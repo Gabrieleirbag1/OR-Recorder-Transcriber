@@ -384,7 +384,6 @@ class MainWindow(QMainWindow):
         self.labels_combobox.setEditable(True)
         self.labels_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.labels_combobox.addItems(RAW_LABELS)
-        self.labels_combobox.setStyleSheet("QComboBox QAbstractItemView { min-width: max-content; }")
         self.labels_combobox.view().setMinimumWidth(400)
 
         self.confirm_button = QPushButton("Ok")
