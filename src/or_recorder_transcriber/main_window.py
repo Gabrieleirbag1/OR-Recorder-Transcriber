@@ -129,6 +129,15 @@ class MainWindow(QMainWindow):
         self.main_layout.update()
         self.centralWidget().updateGeometry()
 
+        # Clear focus and selection from the first row's combobox if it exists, to avoid accidental edits when switching modes
+        if self.session_table.rowCount() > 0:
+            combo = self.session_table.cellWidget(0, 0)
+            if isinstance(combo, QComboBox):
+                combo.clearFocus() 
+                item = self.session_table.item(0, 0)
+                if item is not None:
+                    item.setSelected(False)
+
     def setup_info_ui(self):
         """Set up the information user interface, including labels for displaying status and results."""
         self.info_widget = QWidget()
