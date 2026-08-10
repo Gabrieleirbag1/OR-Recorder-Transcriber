@@ -120,6 +120,35 @@ class EventLoggerCSV(QObject):
             writer = csv.writer(csvfile)
             writer.writerows(rows)
 
+    def delete_row(self, row: int):
+        """Delete a specific row from the CSV file and update the internal file_content.
+
+        :param row int: The row index (0-based, matching self.file_content lists) to delete."""
+        with open(self.file_path, 'r', newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            rows = list(reader)
+
+        target_row = row + 1  # +1 to skip header row
+
+        if target_row >= len(rows):
+            log(
+                f"Row {row} not found in CSV file (only {len(rows) - 1} data rows present). "
+                f"Skipping deletion.",
+                level="WARNING",
+            )
+            return
+
+        del rows[target_row]
+
+        with open(self.file_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(rows)
+
+        # Update internal file_content
+        for key in self.file_content:
+            if row < len(self.file_content[key]):
+                del self.file_content[key][row]
+
     def generate_graphs(self):
         """Generate one graph per distinct Event Type found in the CSV file."""
         graph_generator = GraphGenerator(self.file_path, self.filename)

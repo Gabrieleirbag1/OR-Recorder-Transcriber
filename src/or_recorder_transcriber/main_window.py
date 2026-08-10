@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QComboBox, QMainWindow, QTableWidget, QTableWidgetItem, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
+from PySide6.QtWidgets import QApplication, QComboBox, QHeaderView, QMainWindow, QTableWidget, QTableWidgetItem, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont, QResizeEvent
 from lite_logging.lite_logging import log
@@ -138,11 +138,18 @@ class MainWindow(QMainWindow):
 
         self.transcription_label = QLabel("No transcription yet.")
         self.session_table = QTableWidget()
-        self.session_table.horizontalHeader().setStretchLastSection(True)
-        headerH = ['Label', 'Dose', 'Events']
-        self.session_table.setColumnCount(3)
+        self.session_table.horizontalHeader().setStretchLastSection(False)
+        headerH = ['Label', 'Dose', 'Events', '']
+        self.session_table.setColumnCount(4)
         self.session_table.setHorizontalHeaderLabels(headerH)
         self.session_table.itemChanged.connect(self.on_table_changed)
+
+        header = self.session_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+        self.session_table.setColumnWidth(3, 20)
 
         self.info_layout.addWidget(self.transcription_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.info_layout.addWidget(self.session_table)
@@ -169,6 +176,7 @@ class MainWindow(QMainWindow):
                 selected_label = corrected if corrected is not None else file_content['Selected Label'][i]
 
                 self._set_combo_cell(i, 0, selected_label)
+                self._set_delete_button_cell(i, 3)
 
                 rel_time_str = str(int(file_content['Relative Time'][i]))
                 header_item = self.session_table.verticalHeaderItem(i)
@@ -203,6 +211,46 @@ class MainWindow(QMainWindow):
         if index != -1:
             combo.setCurrentIndex(index)
         combo.blockSignals(False)
+
+    def _set_delete_button_cell(self, row: int, col: int):
+        """Ensure a delete button exists in the given cell; reuse if already present.
+        
+        :param row int: The row index of the cell.
+        :param col int: The column index of the cell (should be the last column for delete buttons)."""
+        btn = self.session_table.cellWidget(row, col)
+        if isinstance(btn, QPushButton):
+            return
+        btn = QPushButton("X")
+        btn.clicked.connect(self.on_delete_row_clicked)
+        self.session_table.setCellWidget(row, col, btn)
+
+    def on_delete_row_clicked(self):
+        """Delete the row whose Delete button was clicked, resolving the row
+        dynamically (via indexAt) so it stays correct after earlier deletions
+        shift row indices."""
+        sender = self.sender()
+        if sender is None:
+            return
+
+        pos = sender.pos()
+        center = pos + sender.rect().center()
+        index = self.session_table.indexAt(center)
+        if not index.isValid():
+            return
+        row = index.row()
+
+        reply = QMessageBox.question(
+            self,
+            "Delete Row",
+            "Are you sure you want to delete this row?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        if self.audio_processor and self.audio_processor.event_logger:
+            self.audio_processor.event_logger.delete_row(row)
+            self.session_table.removeRow(row)
 
     def on_table_changed(self, *args):
         """Unified callback for both QTableWidgetItem edits (Events column) and
