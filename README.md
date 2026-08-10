@@ -6,6 +6,10 @@ Also, this project is combined with an other projet called [NOL-Event-Classifier
 
 Requires Python 3.12 or higher (tested on 3.12.13 which is highly recommanded)
 
+![Recorder](https://github.com/Gabrieleirbag1/OR-Recorder-Transcriber/blob/main/screenshots/ORRT-Recorder.png)
+![Graphic](https://github.com/Gabrieleirbag1/OR-Recorder-Transcriber/blob/main/screenshots/ORRT-Graphic.png)
+
+
 ## Installation
 
 ### Binary package
