@@ -4,13 +4,14 @@ This project is designed to transcribe audio recordings from an operating room a
 
 Also, this project is combined with an other projet called [NOL-Event-Classifier](https://github.com/Gabrieleirbag1/NOL-Event-Data-Classifier), which is used to classify the events mentioned in the transcriptions specifically for the anesthesia domain.
 
-Requires Python 3.12 or higher (tested on 3.12.13 which is highly recommanded)
-
 ![Recorder](https://github.com/Gabrieleirbag1/OR-Recorder-Transcriber/blob/main/screenshots/ORRT-Recorder.png)
 ![Graphic](https://github.com/Gabrieleirbag1/OR-Recorder-Transcriber/blob/main/screenshots/ORRT-Graphic.png)
 
 
 ## Installation
+
+> [!WARNING]
+> Requires Python 3.12 or higher (tested on 3.12.13 which is highly recommanded)
 
 ### Binary package
 Download the orrt-setup-1.0.exe for windows in Releases.
