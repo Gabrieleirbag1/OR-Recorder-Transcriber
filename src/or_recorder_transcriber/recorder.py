@@ -3,7 +3,7 @@ import numpy as np
 import queue
 import threading
 from pynput import keyboard
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 from or_recorder_transcriber.utils import AUDIO_DIR
 
 import os

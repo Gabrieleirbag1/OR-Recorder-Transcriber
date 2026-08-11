@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QApplication, QComboBox, QHeaderView, QMainWindow, QTableWidget, QTableWidgetItem, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont, QResizeEvent
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 from or_recorder_transcriber.utils import ASSETS_PATH
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor

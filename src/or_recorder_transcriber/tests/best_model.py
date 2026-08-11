@@ -1,5 +1,5 @@
 from or_recorder_transcriber.utils import OUTPUT_DIR
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 import whisper
 import os
 

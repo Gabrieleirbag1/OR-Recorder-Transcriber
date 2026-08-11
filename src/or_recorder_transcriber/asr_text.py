@@ -2,7 +2,7 @@ import json
 import os
 import re
 from PySide6.QtCore import QObject
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 from or_recorder_transcriber.utils import ASSETS_PATH
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
 from or_recorder_transcriber.event_logger import EventLoggerCSV

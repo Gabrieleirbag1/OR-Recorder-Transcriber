@@ -1,7 +1,7 @@
 import csv
 import os
 import datetime
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 from PySide6.QtCore import Signal
 from PySide6.QtCore import QObject
 from or_recorder_transcriber.utils import DATA_DIR

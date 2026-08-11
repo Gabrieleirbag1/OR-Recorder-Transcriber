@@ -1,7 +1,7 @@
 import os
 import json
 from shutil import copy as shutil_copy
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 from or_recorder_transcriber.utils import CONFIG_PATH, resource_path
 from or_recorder_transcriber.main_window import MainWindow
 from PySide6.QtWidgets import QComboBox, QFileDialog, QGridLayout, QMainWindow, QWidget, QPushButton, QVBoxLayout, QLabel

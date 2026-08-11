@@ -1,7 +1,7 @@
 import soundfile as sf
 import os
 import argparse
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 from or_recorder_transcriber.recorder import record_until_key_release
 from or_recorder_transcriber.asr_text import AudioProcessor
 from or_recorder_transcriber.utils import AUDIO_DIR

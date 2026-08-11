@@ -3,7 +3,7 @@ import re
 import matplotlib.pyplot as plt
 import pandas as pd
 from or_recorder_transcriber.utils import FIGURES_DIR
-from lite_logging.lite_logging import log
+from litelogging.litelogging import log
 
 class GraphGenerator():
     def __init__(self, file_path: str = None, filename: str = None):
