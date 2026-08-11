@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from platformdirs import user_documents_dir, user_data_dir
@@ -29,3 +30,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(FIGURES_DIR, exist_ok=True)
+
+with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
+    EVENT_TYPES = json.load(f)
+RAW_LABELS = list(EVENT_TYPES.keys())

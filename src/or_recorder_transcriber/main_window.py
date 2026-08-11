@@ -2,15 +2,10 @@ from PySide6.QtWidgets import QApplication, QComboBox, QHeaderView, QMainWindow,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont, QResizeEvent
 from litelogging.litelogging import log
-from or_recorder_transcriber.utils import ASSETS_PATH
+from or_recorder_transcriber.utils import ASSETS_PATH, EVENT_TYPES, RAW_LABELS
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor
 import os
-import json
-
-with open(os.path.join(ASSETS_PATH, "data", "labels.json"), "r", encoding="utf-8") as f:
-    EVENT_TYPES = json.load(f)
-RAW_LABELS = list(EVENT_TYPES.keys())
 
 class MainWindow(QMainWindow):
     """Main window for the OR Recorder Transcriber application.

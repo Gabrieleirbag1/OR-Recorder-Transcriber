@@ -3,8 +3,8 @@ import os
 import re
 from PySide6.QtCore import QObject
 from litelogging.litelogging import log
-from or_recorder_transcriber.utils import ASSETS_PATH
-from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering, RAW_LABELS
+from or_recorder_transcriber.utils import ASSETS_PATH, RAW_LABELS
+from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering
 from or_recorder_transcriber.event_logger import EventLoggerCSV
 
 with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encoding="utf-8") as f:
