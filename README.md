@@ -13,6 +13,23 @@ Also, this project is combined with an other projet called [NOL-Event-Classifier
 > [!WARNING]
 > Requires Python 3.12 or higher (tested on 3.12.13 which is highly recommanded)
 
+> [!WARNING]
+> **Windows Dependency Setup**
+> FFmpeg is required for audio processing. Follow these steps to set it up:
+> 1. Download [ffmpeg-git-essentials](https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z) and extract the archive.
+> 2. Copy `ffmpeg.exe` from the extracted `bin/` folder.
+> 3. Paste `ffmpeg.exe` directly into the root folder of this project.
+
+```text
+OR-Recorder-Transcriber/
+├── src/
+├── screenshots/
+├── ffmpeg.exe         <-- Place ffmpeg.exe here
+├── ORRT.exe
+├── requirements.txt
+└── README.md
+```
+
 ### Binary package
 Download the orrt-setup-1.0.exe for windows in Releases.
 
