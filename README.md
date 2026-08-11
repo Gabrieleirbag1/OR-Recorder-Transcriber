@@ -20,12 +20,12 @@ Also, this project is combined with an other projet called [NOL-Event-Classifier
 > 2. Copy `ffmpeg.exe` from the extracted `bin/` folder.
 > 3. Paste `ffmpeg.exe` directly into the root folder of this project.
 > 
-> OR-Recorder-Transcriber/
-> ├── src/
-> ├── screenshots/
-> ├── ffmpeg.exe         <-- Place ffmpeg.exe here
-> ├── ORRT.exe
-> ├── requirements.txt
+> OR-Recorder-Transcriber/<br>
+> ├── src/<br>
+> ├── screenshots/<br>
+> ├── ffmpeg.exe         <-- Place ffmpeg.exe here<br>
+> ├── ORRT.exe<br>
+> ├── requirements.txt<br>
 > └── README.md
 ```
 
