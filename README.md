@@ -30,7 +30,7 @@ Also, this project is combined with an other projet called [NOL-Event-Classifier
 
 ``` bash
 ### Binary package
-Download the orrt-setup-1.0.exe for windows in Releases.
+Download the binary packages in Releases.
 
 ### Build locally from source
 
