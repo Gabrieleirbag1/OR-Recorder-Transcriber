@@ -1,14 +1,10 @@
-import json
 import os
 import re
 from PySide6.QtCore import QObject
 from litelogging.litelogging import log
-from or_recorder_transcriber.utils import ASSETS_PATH, RAW_LABELS
+from or_recorder_transcriber.utils import load_medical_context
 from nol_event_classifier.supervised.supervised_clustering import SupervisedClustering
 from or_recorder_transcriber.event_logger import EventLoggerCSV
-
-with open(os.path.join(ASSETS_PATH, "data", "medical_context.json"), "r", encoding="utf-8") as f:
-    MEDICAL_CONTEXT = ' '.join(json.load(f))
 
 class AudioProcessor(QObject):
     """Process audio files for automatic speech recognition (ASR) and event classification.
@@ -27,6 +23,7 @@ class AudioProcessor(QObject):
         asr_mode: str = "faster_whisper", 
         language: str = "fr", 
         event_types: dict | None = None,
+        medical_context_path: str | None = None,
         gui: bool = False, 
         event_logger: bool = False
     ):
@@ -46,6 +43,8 @@ class AudioProcessor(QObject):
         self.asr_mode = asr_mode
         self.language = language
         self.event_types = event_types or {}
+        self.medical_context = load_medical_context(medical_context_path)
+        self.raw_labels = list(self.event_types.keys())
         self.gui = gui
         self.event_logger = EventLoggerCSV() if event_logger else None
 
@@ -114,7 +113,7 @@ class AudioProcessor(QObject):
     def load_embedding_model(self):
         """Load the embedding model for event classification."""
         self.supervised_clustering = SupervisedClustering([self.embedding_model_name])
-        self.supervised_clustering.load_models(RAW_LABELS)
+        self.supervised_clustering.load_models(self.raw_labels)
         log(f"Embedding model '{self.embedding_model_name}' loaded.")
 
     def transcribe_audio(self, file_path: str) -> str:
@@ -136,7 +135,7 @@ class AudioProcessor(QObject):
             beam_size = 5 if self.asr_device == "cuda" else 1
             segments, info = self.asr_model.transcribe(
                 file_path,
-                initial_prompt=MEDICAL_CONTEXT,
+                initial_prompt=self.medical_context,
                 language="fr",
                 beam_size=beam_size,
                 vad_filter=True,
@@ -145,12 +144,12 @@ class AudioProcessor(QObject):
             )
             return " ".join(segment.text for segment in segments).strip()
         elif self.asr_mode == "pywhispercpp":
-            result = self.asr_model.transcribe(file_path, initial_prompt=MEDICAL_CONTEXT, language="fr")
+            result = self.asr_model.transcribe(file_path, initial_prompt=self.medical_context, language="fr")
             return result[0].text.strip() if result else ""
         else:
             result = self.asr_model.transcribe(
                 file_path,
-                initial_prompt=MEDICAL_CONTEXT,
+                initial_prompt=self.medical_context,
                 language="fr",
                 fp16=(self.asr_device == "cuda"),
                 condition_on_previous_text=False,
@@ -188,7 +187,7 @@ class AudioProcessor(QObject):
         if not text:
             return None
 
-        results, _ = self.supervised_clustering.match_events_to_labels([text], RAW_LABELS, self.embedding_model_name, top_k=3)
+        results, _ = self.supervised_clustering.match_events_to_labels([text], self.raw_labels, self.embedding_model_name, top_k=3)
         log("Classification results: " + str(results[0]), level="DEBUG")
         return results[0]
 

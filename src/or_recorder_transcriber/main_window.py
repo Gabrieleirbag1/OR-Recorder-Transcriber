@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QApplication, QComboBox, QHeaderView, QMainWindow,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QIcon, QPixmap, QFont, QResizeEvent
 from litelogging.litelogging import log
-from or_recorder_transcriber.utils import ASSETS_PATH, EVENT_TYPES, RAW_LABELS
+from or_recorder_transcriber.utils import ASSETS_PATH, load_labels
 from or_recorder_transcriber.recorder import RecordThread
 from or_recorder_transcriber.asr_text import AudioProcessor
 import os
@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         self.record_thread = None
         self.audio_processor = None
         self.is_recording = False
+        self.raw_labels = []
 
         self.setWindowTitle("OR Recorder Transcriber")
         self.setup()
@@ -38,14 +39,23 @@ class MainWindow(QMainWindow):
 
     def load_audio_processor(self):
         """Load the audio processor with the specified ASR and embedding models, and the Event Type
-        mapping loaded once from labels.json at module import time."""
+        mapping loaded from the config-selected (or bundled default) labels.json."""
+        self.event_types = load_labels(self.config.get("labels_json_path"))
+        try:
+            self.raw_labels = list(self.event_types.keys())
+        except Exception as e:
+            log(f"Failed to load event types from labels.json. Falling back to default labels. Error: {e}", level="ERROR")
+            self.event_types = load_labels()
+            self.raw_labels = list(self.event_types.keys())
+
         if self.audio_processor is None:
             self.audio_processor = AudioProcessor(
                 asr_model_name=self.config["asr_model_name"],
                 embedding_model_name=self.config["embedding_model_name"],
                 asr_mode=self.config["asr_mode"],
                 language=self.config["language"],
-                event_types=EVENT_TYPES,
+                event_types=self.event_types,
+                medical_context_path=self.config.get("medical_context_json_path"),
                 gui=True, 
                 event_logger=True
             )
@@ -184,7 +194,7 @@ class MainWindow(QMainWindow):
 
                 corrected = file_content['Corrected Label'][i]
                 selected_label = corrected if corrected is not None else file_content['Selected Label'][i]
-                self._set_combo_cell(i, 0, selected_label, RAW_LABELS)
+                self._set_combo_cell(i, 0, selected_label, self.raw_labels)
 
                 medication_type = file_content['Medication Type'][i]
                 self._set_combo_cell(i, 2, medication_type if medication_type is not None else "N/A", ["Perfusion", "Bolus", "N/A"], min_width=100)
@@ -423,7 +433,7 @@ class MainWindow(QMainWindow):
         self.labels_combobox = QComboBox()
         self.labels_combobox.setEditable(True)
         self.labels_combobox.view().setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.labels_combobox.addItems(RAW_LABELS)
+        self.labels_combobox.addItems(self.raw_labels)
         self.labels_combobox.view().setMinimumWidth(300)
 
         self.confirm_button = QPushButton("Ok")

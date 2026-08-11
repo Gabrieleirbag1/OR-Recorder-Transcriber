@@ -2,7 +2,7 @@ import os
 import json
 from shutil import copy as shutil_copy
 from litelogging.litelogging import log
-from or_recorder_transcriber.utils import CONFIG_PATH, resource_path
+from or_recorder_transcriber.utils import CONFIG_PATH, resource_path, DEFAULT_RESSOURCE_LABELS_PATH, DEFAULT_RESSOURCE_MEDICAL_CONTEXT_PATH, DEFAULT_LABELS_PATH, DEFAULT_MEDICAL_CONTEXT_PATH
 from or_recorder_transcriber.main_window import MainWindow
 from PySide6.QtWidgets import QComboBox, QFileDialog, QGridLayout, QMainWindow, QWidget, QPushButton, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt, Signal
@@ -98,6 +98,16 @@ class ConfigWindow(QMainWindow):
         self.list_embedding_models(self.config.get("embedding_model_dir", ""))
         self.embedding_model_combobox.setCurrentText(self.config.get("embedding_model_name", "paraphrase-multilingual-mpnet-base-v2"))
 
+        self.labels_json_label = QLabel("Labels File (labels.json):")
+        self.labels_json_button = QPushButton()
+        self._set_file_button_text(self.labels_json_button, self.config.get("labels_json_path", ""), DEFAULT_LABELS_PATH)
+        self.labels_json_button.clicked.connect(lambda: self.select_json_file(self.labels_json_button, DEFAULT_LABELS_PATH))
+
+        self.medical_context_json_label = QLabel("Medical Context File (medical_context.json):")
+        self.medical_context_json_button = QPushButton()
+        self._set_file_button_text(self.medical_context_json_button, self.config.get("medical_context_json_path", ""), DEFAULT_MEDICAL_CONTEXT_PATH)
+        self.medical_context_json_button.clicked.connect(lambda: self.select_json_file(self.medical_context_json_button, DEFAULT_MEDICAL_CONTEXT_PATH))
+
         self.confirm_button = QPushButton("Save" if not self.on_save_close else "Save and Reload Application")
         self.confirm_button.setStyleSheet("QPushButton { margin-top: 12px; }")
         self.confirm_button.clicked.connect(self.on_confirm)
@@ -115,8 +125,46 @@ class ConfigWindow(QMainWindow):
         layout.addWidget(self.embedding_model_label, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.embedding_model_combobox)
         layout.addWidget(self.embedding_model_browse)
+        layout.addWidget(self.labels_json_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.labels_json_button)
+        layout.addWidget(self.medical_context_json_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.medical_context_json_button)
         layout.addWidget(self.confirm_button)
         self.setCentralWidget(main_widget)
+
+    def _set_file_button_text(self, button: QPushButton, path: str, default_path: str):
+        """Set a file-picker button's label to the selected path, or note that the bundled default
+        is in use.
+
+        :param button QPushButton: The button whose text to update.
+        :param path str: The currently configured path, or an empty string to use the bundled default.
+        :param default_path str: The bundled default path to display when `path` is empty."""
+        button.setText(f"Selected: {path}" if path else f"Default: {default_path}")
+
+    def _get_button_path(self, button: QPushButton) -> str:
+        """Extract the user-selected file path from a file-picker button's text.
+
+        :param button QPushButton: The button to read.
+
+        :return: The selected path, or "" if the bundled default is in use.
+        :rtype: str"""
+        text = button.text()
+        return text.replace("Selected: ", "") if text.startswith("Selected: ") else ""
+
+    def select_json_file(self, button: QPushButton, default_path: str):
+        """Open a file dialog to select a JSON file and update the given button's text accordingly.
+        If the user cancels, the button keeps its previous selection (or default).
+
+        :param button QPushButton: The button to update with the selected file path.
+        :param default_path str: The bundled default path shown if no selection has been made."""
+        selected_file, _ = QFileDialog.getOpenFileName(
+            parent=self,
+            caption="Select a JSON File",
+            dir="",
+            filter="JSON Files (*.json)"
+        )
+        if selected_file:
+            self._set_file_button_text(button, selected_file, default_path)
 
     def on_confirm(self):
         """Handle the event when the confirm button is clicked, saving the configuration and reloading the main window."""
@@ -126,20 +174,26 @@ class ConfigWindow(QMainWindow):
         asr_mode = self.asr_mode_combobox.currentText()
         language = self.language_combobox.currentText()
         threshold = self.threshold_combobox.currentText()
-        log(f"Configuration confirmed: ASR Model: {asr_model_name}, Embedding Model: {embedding_model_name}, ASR Mode: {asr_mode}, Language: {language}, Threshold: {threshold}", level="DEBUG")
+        labels_json_path = self._get_button_path(self.labels_json_button)
+        medical_context_json_path = self._get_button_path(self.medical_context_json_button)
+        log(f"Configuration confirmed: ASR Model: {asr_model_name}, Embedding Model: {embedding_model_name}, ASR Mode: {asr_mode}, Language: {language}, Threshold: {threshold}, Labels: {labels_json_path or 'default'}, Medical Context: {medical_context_json_path or 'default'}", level="DEBUG")
         self.config = {
             "asr_model_name": asr_model_name,
             "embedding_model_name": embedding_model_name,
             "embedding_model_dir": embedding_model_dir,
+            "labels_path": labels_json_path,
+            "medical_context_path": medical_context_json_path,
             "asr_mode": asr_mode,
             "language": language,
-            "threshold": float(threshold)
+            "threshold": float(threshold),
+            "labels_json_path": labels_json_path,
+            "medical_context_json_path": medical_context_json_path,
         }
         ConfigManager.update_config(self.config)
         self.close()
         self.closed.emit()
         self.main_window = ConfigManager.load_window(MainWindow, self.theme, self.config)
-
+    
     def list_embedding_models(self, directory: str) -> list[str]:
         """List all embedding models in the specified directory and populate the combobox.
         
@@ -186,6 +240,7 @@ class ConfigManager:
         self.window = None
 
         self.__load_config()
+        self.__load_assets_files()
 
     def __load_config(self):
         """Load the configuration from the config.json file, or fall back to default_config.json if necessary."""
@@ -208,7 +263,14 @@ class ConfigManager:
                     self.config = json.load(f)
             self.window = self.load_window(ConfigWindow, self.theme, self.config)
             
-
+    def __load_assets_files(self):
+        """Load the default labels and medical context files into the configuration directory if they do not exist."""
+        if not os.path.exists(DEFAULT_LABELS_PATH):
+            shutil_copy(DEFAULT_RESSOURCE_LABELS_PATH, DEFAULT_LABELS_PATH)
+            log("Copied default labels.json to config directory.", level="DEBUG")
+        if not os.path.exists(DEFAULT_MEDICAL_CONTEXT_PATH):
+            shutil_copy(DEFAULT_RESSOURCE_MEDICAL_CONTEXT_PATH, DEFAULT_MEDICAL_CONTEXT_PATH)
+            log("Copied default medical_context.json to config directory.", level="DEBUG")
 
     @staticmethod
     def update_config(new_config: dict[str, str]):
