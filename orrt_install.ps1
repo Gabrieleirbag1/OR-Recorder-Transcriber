@@ -57,7 +57,7 @@ pyinstaller --noconfirm --onefile --windowed `
     --add-data "$configData" `
     --add-data "$whisperData" `
     --add-data "$fasterWhisperData" `
-    --add-binary "$currentDir\ffmpeg\ffmpeg.exe;ffmpeg/" `
+    --add-binary "$currentDir\ffmpeg.exe;ffmpeg/" `
     --distpath "$currentDir" `
     --name "ORRT" `
     "$mainScript"
