@@ -1,14 +1,13 @@
 #!/usr/bin/env pwsh
 param(
-    [switch]$desktop,
     [Alias("d")]
-    [switch]$d
+    [switch]$desktop
 )
 
 $currentDir = (Get-Location).Path
 
-# Normalize the --desktop / -d flags into a single boolean
-$createDesktop = $desktop -or $d
+# $desktop est déjà vrai si la commande est appelée avec -desktop ou -d
+$createDesktop = $desktop.IsPresent
 
 # Check Python is available
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
@@ -58,17 +57,18 @@ pyinstaller --noconfirm --onefile --windowed `
     --add-data "$configData" `
     --add-data "$whisperData" `
     --add-data "$fasterWhisperData" `
+    --add-binary "$currentDir\ffmpeg\ffmpeg.exe;ffmpeg/" `
     --distpath "$currentDir" `
     --name "ORRT" `
     "$mainScript"
 
-# Remove the virtual environment
-Remove-Item -Recurse -Force $venvPath
-
 # Return to the original directory
 Set-Location $currentDir
 
-Write-Host "ORRT installation script completed successfully."
-
-# Deactivate the virtual environment
+# Deactivate before removing the venv directory
 deactivate
+
+# Remove the virtual environment
+Remove-Item -Recurse -Force $venvPath
+
+Write-Host "ORRT installation script completed successfully."
