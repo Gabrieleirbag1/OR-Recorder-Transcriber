@@ -27,8 +27,8 @@ Also, this project is combined with an other projet called [NOL-Event-Classifier
 > ├── ORRT.exe<br>
 > ├── requirements.txt<br>
 > └── README.md
-```
 
+``` bash
 ### Binary package
 Download the orrt-setup-1.0.exe for windows in Releases.
 
