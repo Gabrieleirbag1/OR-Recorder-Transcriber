@@ -2,6 +2,8 @@
     "asr_model_name": "tiny", 
     "embedding_model_name": "paraphrase-multilingual-mpnet-base-v2", 
     "embedding_model_dir": "",
+    "labels_json_path": "",
+    "medical_context_json_path": "",
     "asr_mode": "faster_whisper", 
     "language": "fr",
     "threshold": 0.75
