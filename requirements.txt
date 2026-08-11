@@ -9,4 +9,4 @@ pynput>=1.8.2
 openai-whisper>=20250625
 faster-whisper>=1.2.1
 pywhispercpp>=1.5.0
--e git+https://github.com/Gabrieleirbag1/NOL-Event-Data-Classifier.git@main#egg=nol-event-classifier
+-e git+https://github.com/Gabrieleirbag1/NOL-Event-Data-Classifier.git@9386dd92a0d2016fc7de7fabe9fe85ae2780bc27#egg=nol-event-classifier
