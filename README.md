@@ -77,6 +77,16 @@ Run Python File
 python3 src/or-recorder-transcriber/main.py
 ```
 
+## Documentation
+
+**User Guide:** See the [guide.pdf](https://github.com/Gabrieleirbag1/OR-Recorder-Transcriber/blob/main/guide.pdf) for end-user instructions and workflows.
+
+**Developer Docs:** Check the Sphinx developer docs for code structure and technical guidelines.
+```bash
+chmod +x sphinx_docs_setup.sh
+./sphinx_docs_setup.sh
+```
+
 ## Author
 @Missclick (Developer)
 E-mail : gabrielgarronedev@gmail.com
