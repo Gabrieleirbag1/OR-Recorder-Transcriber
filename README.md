@@ -11,7 +11,7 @@ Also, this project is combined with an other projet called [NOL-Event-Classifier
 ## Installation
 
 > [!WARNING]
-> Requires Python 3.12 or higher (tested on 3.12.13 which is highly recommanded)
+> Requires Python 3.12 or higher (tested on 3.12.10 which is highly recommanded)
 
 > [!IMPORTANT]
 > **Windows Dependency Setup**<br>
