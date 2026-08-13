@@ -31,6 +31,7 @@ Also, this project is combined with an other projet called [NOL-Event-Classifier
 ``` bash
 ### Binary package
 Download the binary packages in Releases.
+```
 
 ### Build locally from source
 
